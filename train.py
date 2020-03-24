@@ -6,37 +6,85 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torchvision
 import torchvision.transforms as transforms
+import sys
 import os
+import argparse
 
-from models.cifar import resnet_basis
+from models.cifar import resnet, resnet_basis
 import utils
 
+#arguments
+#show_arguments
+#show_loss
+#etc etc...
 
-trainloader = utils.get_traindata('CIFAR100',"./data",batch_size=256,download=True)
-testloader = utils.get_testdata('CIFAR100',"./data",batch_size=256)
+parser = argparse.ArgumentParser(description='TODO')
+parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
+parser.add_argument('--lambda1', default=0.5, type=float, help='lambda1 (for coeff loss)')
+parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
+parser.add_argument('--rank', default=16, type=int, help='lambda2 (for basis loss)')
+parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
+parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
+parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
+parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
+args = parser.parse_args()
+
+lr = args.lr
+momentum = args.momentum
+weight_decay = args.weight_decay
+lambda1 = args.lambda1
+lambda2 = args.lambda2
+rank = args.rank
+
+dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
+dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis}
+
+if args.dataset not in dic_dataset:
+    print("The dataset is currently not supported")
+    sys.exit()
+
+if args.model not in dic_model:
+    print("The model is currently not supported")
+    sys.exit()
+
+trainloader = utils.get_traindata(args.dataset,"./data",batch_size=args.batch_size,download=True)
+testloader = utils.get_testdata(args.dataset,"./data",batch_size=args.batch_size)
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-rank = 16
-
-net = resnet_basis.ResNet34_Basis(100, rank)
-
+if 'Basis' in args.model:
+    net = dic_model[args.model](dic_dataset[args.dataset], rank)
+else:
+    net = dic_model[args.model](dic_dataset[args.dataset])
+    
 net = net.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-
-lmda1 = 0.1
-lmda2 = 0.1
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
+def train(epoch):
+    print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
+    net.train()
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+                        
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+    
 def train_coeff(epoch):
-    print('\nCuda0 Coeff Epoch: %d' % epoch)
+    print('\nCuda ' + args.visible_device + ' Coeff Epoch: %d' % epoch)
     net.train()
     
     for i in net.layer1[1:]:
@@ -69,12 +117,12 @@ def train_coeff(epoch):
             sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*4:,:,:]))
                     
         loss = criterion(outputs, targets)
-        loss = loss - lmda1*sum_sharedcoeff
+        loss = loss - lambda1*sum_sharedcoeff
         loss.backward()
         optimizer.step()
         
 def train_basis(epoch):
-    print('\nCuda0 Epoch: %d' % epoch)
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
     for i in net.layer1[1:]:
@@ -115,7 +163,7 @@ def train_basis(epoch):
         #TODO: remove loop, calculate in a single, larger tensor
         
         loss = criterion(outputs, targets)
-        loss = loss + lmda2*sum_simil
+        loss = loss + lambda2*sum_simil
         loss.backward()
         optimizer.step()
     
@@ -154,7 +202,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt0_mult.pth')
+        torch.save(state, './checkpoint/ckpt' + args.visible_device + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
@@ -163,67 +211,95 @@ def test(epoch):
 best_acc = 0
 best_acc_top5 = 0
 
-optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-for i in range(150):
-    train_basis(i+1)
-    test(i+1)
+if 'Basis' in args.model:
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    for i in range(150):
+        train_basis(i+1)
+        test(i+1)
     
-checkpoint = torch.load('./checkpoint/ckpt0_mult.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
     
-optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-for i in range(150):
-    train_coeff(i+1)
-    test(i+1)
+    for i in range(150):
+        train_coeff(i+1)
+        test(i+1)
     
-#============
+    #============
     
-checkpoint = torch.load('./checkpoint/ckpt0_mult.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
 
-optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-for i in range(75):
-    train_basis(i+151)
-    test(i+151)
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
+        train_basis(i+151)
+        test(i+151)
     
-checkpoint = torch.load('./checkpoint/ckpt0_mult.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
 
-optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-for i in range(75):
-    train_coeff(i+151)
-    test(i+151)
+    for i in range(75):
+        train_coeff(i+151)
+        test(i+151)
     
-#============
+    #============
     
-checkpoint = torch.load('./checkpoint/ckpt0_mult.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
 
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9, weight_decay=5e-4)
-for i in range(75):
-    train_basis(i+226)
-    test(i+226)
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
+        train_basis(i+226)
+        test(i+226)
 
-print("Best_Acc_top1 = %.3f" % best_acc)
-print("Best_Acc_top5 = %.3f" % best_acc_top5)
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
 
-checkpoint = torch.load('./checkpoint/ckpt0_mult.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
+    for i in range(75):
+        train_coeff(i+226)
+        test(i+226)
 
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9, weight_decay=5e-4)
-for i in range(75):
-    train_coeff(i+226)
-    test(i+226)
+    print("Best_Acc_top1 = %.3f" % best_acc)
+    print("Best_Acc_top5 = %.3f" % best_acc_top5)
+    
+else:
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    for i in range(150):
+        train(i+1)
+        test(i+1)
+    
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
 
-print("Best_Acc_top1 = %.3f" % best_acc)
-print("Best_Acc_top5 = %.3f" % best_acc_top5)
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
+        train(i+151)
+        test(i+151)
+    
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
+        train(i+226)
+        test(i+226)
+
+    print("Best_Acc_top1 = %.3f" % best_acc)
+    print("Best_Acc_top5 = %.3f" % best_acc_top5)
