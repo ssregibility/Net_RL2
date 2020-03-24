@@ -74,7 +74,7 @@ def train_coeff(epoch):
         optimizer.step()
         
 def train_basis(epoch):
-    print('\nCuda0 Basis Epoch: %d' % epoch)
+    print('\nCuda0 Epoch: %d' % epoch)
     net.train()
     
     for i in net.layer1[1:]:
@@ -89,17 +89,30 @@ def train_basis(epoch):
     cos_simil= nn.CosineSimilarity(dim=1)
     
     for batch_idx, (inputs, targets) in enumerate(trainloader):
-        print("!")
         inputs, targets = inputs.to(device), targets.to(device)
     
         optimizer.zero_grad()
         outputs = net(inputs)
         
         sum_simil=0
-        sum_simil=sum_simil + torch.sum(cos_simil(net.shared_basis_1.weight[0].unsqueeze(dim=0),net.shared_basis_1.weight)[1:])
-        sum_simil=sum_simil + torch.sum(cos_simil(net.shared_basis_2.weight[0].unsqueeze(dim=0),net.shared_basis_2.weight)[1:])
-        sum_simil=sum_simil + torch.sum(cos_simil(net.shared_basis_3.weight[0].unsqueeze(dim=0),net.shared_basis_3.weight)[1:])
-        sum_simil=sum_simil + torch.sum(cos_simil(net.shared_basis_4.weight[0].unsqueeze(dim=0),net.shared_basis_4.weight)[1:])
+        for i in range(net.shared_basis_1.weight.shape[0]):
+            if i+1 == net.shared_basis_1.weight.shape[0]:
+                break
+            sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_1.weight[i].unsqueeze(dim=0),net.shared_basis_1.weight)[i+1:]))
+        for i in range(net.shared_basis_2.weight.shape[0]):
+            if i+1 == net.shared_basis_2.weight.shape[0]:
+                break
+            sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_2.weight[i].unsqueeze(dim=0),net.shared_basis_2.weight)[i+1:]))
+        for i in range(net.shared_basis_3.weight.shape[0]):
+            if i+1 == net.shared_basis_3.weight.shape[0]:
+                break
+            sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_3.weight[i].unsqueeze(dim=0),net.shared_basis_3.weight)[i+1:]))
+        for i in range(net.shared_basis_4.weight.shape[0]):
+            if i+1 == net.shared_basis_4.weight.shape[0]:
+                break
+            sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_4.weight[i].unsqueeze(dim=0),net.shared_basis_4.weight)[i+1:]))
+        
+        #TODO: remove loop, calculate in a single, larger tensor
         
         loss = criterion(outputs, targets)
         loss = loss + lmda2*sum_simil
