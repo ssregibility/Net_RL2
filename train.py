@@ -13,22 +13,19 @@ import argparse
 from models.cifar import resnet, resnet_basis
 import utils
 
-#arguments
-#show_arguments
-#show_loss
-#etc etc...
-
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambda1', default=0.5, type=float, help='lambda1 (for coeff loss)')
+parser.add_argument('--lambda1', default=0, type=float, help='lambda1 (for coeff loss)')
 parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
 parser.add_argument('--rank', default=16, type=int, help='lambda2 (for basis loss)')
 parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
+#parser.add_argument show_loss
+#parser.add_argument show_acc
 args = parser.parse_args()
 
 lr = args.lr
@@ -102,6 +99,7 @@ def train_coeff(epoch):
         optimizer.zero_grad()
         outputs = net(inputs)
     
+        #l1-norm (absolute sum) of coefficients related to shared base
         sum_sharedcoeff = 0
         for i in net.layer1[1:]:
             sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv1.weight[:,rank:,:,:]))
@@ -117,7 +115,7 @@ def train_coeff(epoch):
             sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*4:,:,:]))
                     
         loss = criterion(outputs, targets)
-        loss = loss - lambda1*sum_sharedcoeff
+        loss = loss# - lambda1*sum_sharedcoeff
         loss.backward()
         optimizer.step()
         
@@ -143,6 +141,8 @@ def train_basis(epoch):
         outputs = net(inputs)
         
         sum_simil=0
+        #l1-norm (absolute sum) of cos similarity between every shared base
+        #CosineSimilarity calculates cosine similarity of tensors along dim=1
         for i in range(net.shared_basis_1.weight.shape[0]):
             if i+1 == net.shared_basis_1.weight.shape[0]:
                 break
