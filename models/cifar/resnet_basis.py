@@ -2,8 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-#Shared Basis
-#Coefficients
+#Basic Block with prameter sharing
+#in_planes: Integer, number of input channels
+#planes: Integer, number of output channels
+#rank: Integer, rank of base(=total number of shared templates)
+#shared_basis: tensor, tensor for shared base
+#stride: Integer, stride
 
 class BasicBlock_Basis(nn.Module):
     expansion = 1
@@ -11,6 +15,7 @@ class BasicBlock_Basis(nn.Module):
     def __init__(self, in_planes, planes, rank, shared_basis, stride=1):
         super(BasicBlock_Basis, self).__init__()
         
+        #training mode selection - should be manually changed prior to training
         self.mode = 'train_coeffs'
         #self.mode = 'train_basis'
         
@@ -33,6 +38,7 @@ class BasicBlock_Basis(nn.Module):
             )
 
     def forward(self, x):
+        #forward pass for basis trainig
         if (self.mode == 'train_basis'):
             self.shared_basis.requires_grad = True
             self.basis_conv1.requires_grad = True
@@ -46,6 +52,8 @@ class BasicBlock_Basis(nn.Module):
             out += self.shortcut(x)
             out = F.relu(out)
             return out
+        #forward pass for coeff trainig
+        #Feature maps from lower-than-50% coeffs are removed
         else:
             self.shared_basis.requires_grad = False
             self.basis_conv1.requires_grad = False
@@ -68,13 +76,19 @@ class BasicBlock_Basis(nn.Module):
             out += self.shortcut(x)
             out = F.relu(out)
             return x
-            #train_coeffs
             
+    
+#Bottleneck Block with prameter sharing
+#in_planes: Integer, number of input channels
+#planes: Integer, number of output channels
+#rank: Integer, rank of base(=total number of shared templates)
+#shared_basis: tensor, tensor for shared base
+#stride: Integer, stride
     
 class Bottleneck_Basis(nn.Module):
     expansion = 4
 
-    def __init__(self, in_planes, planes, basis, stride=1):
+    def __init__(self, in_planes, planes, rank, shared_basis, stride=1):
         super(Bottleneck_Basis, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -98,6 +112,11 @@ class Bottleneck_Basis(nn.Module):
         out = F.relu(out)
         return out
 
+#Basic Block without prameter sharing
+#in_planes: Integer, number of input channels
+#planes: Integer, number of output channels
+#stride: Integer, stride
+    
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -122,6 +141,11 @@ class BasicBlock(nn.Module):
         out = F.relu(out)
         return out
 
+#Bottleneck Block without prameter sharing
+#in_planes: Integer, number of input channels
+#planes: Integer, number of output channels
+#stride: Integer, stride
+    
 class Bottleneck(nn.Module):
     expansion = 4
 
@@ -149,6 +173,13 @@ class Bottleneck(nn.Module):
         out += self.shortcut(x)
         out = F.relu(out)
         return out
+
+#Resnet with prameter sharing
+#block: Class, Residual block with parameter sharing
+#blcok_without_basis: Class, Residual block without parameter sharing
+#num_blocks: 4-elements list, number of blocks per group
+#num_classes: Integer, total number of dataset's classes
+#rank: Integer, rank of base(=total number of shared templates)
 
 class ResNet_Basis(nn.Module):
     def __init__(self, block, block_without_basis, num_blocks, num_classes, rank):
@@ -196,7 +227,8 @@ class ResNet_Basis(nn.Module):
         out = self.linear(out)
         return out
 
-
+#Parameter shared ResNet models
+    
 def ResNet18_Basis(c, r):
     return ResNet_Basis(BasicBlock_Basis, BasicBlock, [2,2,2,2],c,r)
 

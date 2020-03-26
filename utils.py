@@ -3,6 +3,9 @@ import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
+#Calculates meanstd of dataset
+#dataset: String, of the dataset
+#root: String, path of dataset
 def dataset_meanstd(dataset, root, train=True, download=False):
     
     transform = transforms.Compose([transforms.ToTensor()])
@@ -17,6 +20,9 @@ def dataset_meanstd(dataset, root, train=True, download=False):
     
     return mean, std
 
+#Prepares training dataset
+#dataset: String, name of dataset
+#root: String, path of dataset
 def get_traindata(dataset, root, train=True, download=False, shuffle=True, batch_size=128, num_workers=8, crop_size=32, padding=4):
         
     if dataset=='CIFAR10':
@@ -63,6 +69,9 @@ def get_traindata(dataset, root, train=True, download=False, shuffle=True, batch
     
     return trainloader
 
+#Prepares test dataset
+#dataset: String, name of dataset
+#root: String, path of dataset
 def get_testdata(dataset, root, train=False, download=False, shuffle=False, batch_size=128, num_workers=8):
     
     if dataset=='CIFAR10':
@@ -101,6 +110,7 @@ def get_testdata(dataset, root, train=False, download=False, shuffle=False, batc
         
     return testloader
 
+#Placeholder
 def get_valdata():
     
     return

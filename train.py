@@ -13,11 +13,12 @@ import argparse
 from models.cifar import resnet, resnet_basis
 import utils
 
+#Possible arguments
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambda1', default=0, type=float, help='lambda1 (for coeff loss)')
+parser.add_argument('--lambda1', default=0, type=float, help='lambda1 (for coeff loss)') #currently disabled
 parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
 parser.add_argument('--rank', default=16, type=int, help='lambda2 (for basis loss)')
 parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
@@ -62,10 +63,12 @@ net = net.to(device)
 
 criterion = nn.CrossEntropyLoss()
 
+#Unused - reserved for different LR schedulers
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
+#Training for standard models
 def train(epoch):
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
@@ -80,6 +83,7 @@ def train(epoch):
         loss.backward()
         optimizer.step()
     
+#Training for parameter shared models, only coeffs are updated
 def train_coeff(epoch):
     print('\nCuda ' + args.visible_device + ' Coeff Epoch: %d' % epoch)
     net.train()
@@ -119,6 +123,7 @@ def train_coeff(epoch):
         loss.backward()
         optimizer.step()
         
+#Training for parameter shared models, only base are updated
 def train_basis(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
@@ -167,6 +172,7 @@ def train_basis(epoch):
         loss.backward()
         optimizer.step()
     
+#Test for models
 def test(epoch):
     global best_acc
     global best_acc_top5
@@ -211,6 +217,7 @@ def test(epoch):
 best_acc = 0
 best_acc_top5 = 0
 
+#For parameter shared models, training happens in two rotating stages: basis training - coeff training - basis trianig - coeff training - ...
 if 'Basis' in args.model:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(150):
