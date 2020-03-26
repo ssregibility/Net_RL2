@@ -119,7 +119,7 @@ def train_coeff(epoch):
             sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*4:,:,:]))
                     
         loss = criterion(outputs, targets)
-        loss = loss# - lambda1*sum_sharedcoeff
+        loss = loss# - lambda1*torch.log10(sum_sharedcoeff)
         loss.backward()
         optimizer.step()
         
@@ -168,7 +168,7 @@ def train_basis(epoch):
         #TODO: remove loop, calculate in a single, larger tensor
         
         loss = criterion(outputs, targets)
-        loss = loss + lambda2*sum_simil
+        loss = loss + lambda2*torch.log10(sum_simil)
         loss.backward()
         optimizer.step()
     
