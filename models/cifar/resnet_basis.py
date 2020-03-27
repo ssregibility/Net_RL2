@@ -75,7 +75,7 @@ class BasicBlock_Basis(nn.Module):
             
             out += self.shortcut(x)
             out = F.relu(out)
-            return x
+            return out
             
     
 #Bottleneck Block with prameter sharing
