@@ -153,25 +153,25 @@ def train_basis(epoch):
             if i+1 == net.shared_basis_1.weight.shape[0]:
                 break
             sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_1.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[i].view(-1).shape[0])))[i+1:]))
-            sum_cnt=sum_cnt + net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[0].view(-1).shape[0])).shape[0]
+        sum_cnt=sum_cnt + net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[0].view(-1).shape[0])).shape[0]
             
         for i in range(net.shared_basis_2.weight.shape[0]):
             if i+1 == net.shared_basis_2.weight.shape[0]:
                 break
             sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_2.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[i].view(-1).shape[0])))[i+1:]))
-            sum_cnt=sum_cnt + net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[0].view(-1).shape[0])).shape[0]
+        sum_cnt=sum_cnt + net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[0].view(-1).shape[0])).shape[0]
             
         for i in range(net.shared_basis_3.weight.shape[0]):
             if i+1 == net.shared_basis_3.weight.shape[0]:
                 break
             sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_3.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[i].view(-1).shape[0])))[i+1:]))
-            sum_cnt=sum_cnt + net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[0].view(-1).shape[0])).shape[0]
+        sum_cnt=sum_cnt + net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[0].view(-1).shape[0])).shape[0]
             
         for i in range(net.shared_basis_4.weight.shape[0]):
             if i+1 == net.shared_basis_4.weight.shape[0]:
                 break
             sum_simil=sum_simil + torch.sum(abs(cos_simil(net.shared_basis_4.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[i].view(-1).shape[0])))[i+1:]))
-            sum_cnt=sum_cnt + net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[0].view(-1).shape[0])).shape[0]
+        sum_cnt=sum_cnt + net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[0].view(-1).shape[0])).shape[0]
         
         #TODO: remove loop, calculate in a single, larger tensor
         
