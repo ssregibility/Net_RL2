@@ -61,17 +61,19 @@ class BasicBlock_Basis(nn.Module):
             self.coeff_conv1.requires_grad = True
             self.coeff_conv2.requires_grad = True
             
-            mask_conv1 = torch.argsort(abs(self.coeff_conv1.weight).sum(dim=0).view(-1))
+            #mask_conv1 = torch.argsort(abs(self.coeff_conv1.weight).sum(dim=0).view(-1))
             
             out = torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1)
-            out = nn.functional.conv2d(out[:,mask_conv1<self.rank,:,:], self.coeff_conv1.weight[:,mask_conv1<self.rank,:,:])
-            out = F.relu(self.bn1(out))
+            #out = nn.functional.conv2d(out[:,mask_conv1<self.rank,:,:], self.coeff_conv1.weight[:,mask_conv1<self.rank,:,:])
+            out = F.relu(self.bn1(self.coeff_conv1(out)))
+            #out = F.relu(self.bn1(out))
             
-            mask_conv2 = torch.argsort(abs(self.coeff_conv2.weight).sum(dim=0).view(-1))
+            #mask_conv2 = torch.argsort(abs(self.coeff_conv2.weight).sum(dim=0).view(-1))
             
             out = torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1)
-            out = nn.functional.conv2d(out[:,mask_conv1<self.rank,:,:], self.coeff_conv2.weight[:,mask_conv2<self.rank,:,:])
-            out = self.bn2(out)
+            #out = nn.functional.conv2d(out[:,mask_conv1<self.rank,:,:], self.coeff_conv2.weight[:,mask_conv2<self.rank,:,:])
+            out = self.bn2(self.coeff_conv2(out))
+            #out = self.bn2(out)
             
             out += self.shortcut(x)
             out = F.relu(out)
