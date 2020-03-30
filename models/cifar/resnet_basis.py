@@ -40,11 +40,11 @@ class BasicBlock_Basis(nn.Module):
     def forward(self, x):
         #forward pass for basis trainig
         if (self.mode == 'train_basis'):
-            self.shared_basis.requires_grad = True
-            self.basis_conv1.requires_grad = True
-            self.basis_conv2.requires_grad = True
-            self.coeff_conv1.requires_grad = False
-            self.coeff_conv2.requires_grad = False
+            #self.shared_basis.requires_grad = True
+            #self.basis_conv1.requires_grad = True
+            #self.basis_conv2.requires_grad = True
+            #self.coeff_conv1.requires_grad = False
+            #self.coeff_conv2.requires_grad = False
             
             out = torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1)
             out = F.relu(self.bn1(self.coeff_conv1(out)))
@@ -55,11 +55,11 @@ class BasicBlock_Basis(nn.Module):
         #forward pass for coeff trainig
         #Feature maps from lower-than-50% coeffs are removed
         else:
-            self.shared_basis.requires_grad = False
-            self.basis_conv1.requires_grad = False
-            self.basis_conv2.requires_grad = False
-            self.coeff_conv1.requires_grad = True
-            self.coeff_conv2.requires_grad = True
+            #self.shared_basis.requires_grad = False
+            #self.basis_conv1.requires_grad = False
+            #self.basis_conv2.requires_grad = False
+            #self.coeff_conv1.requires_grad = True
+            #self.coeff_conv2.requires_grad = True
             
             #mask_conv1 = torch.argsort(abs(self.coeff_conv1.weight).sum(dim=0).view(-1))
             

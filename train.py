@@ -234,6 +234,38 @@ best_acc_top5 = 0
 #For parameter shared models, training happens in two rotating stages: basis training - coeff training - basis trianig - coeff training - ...
 if 'Basis' in args.model:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    for i in range(80):
+        train_basis(i+1)
+        test(i+1)
+
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
+    for i in range(40):
+        train_basis(i+81)
+        test(i+81)
+    
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
+    for i in range(40):
+        train_basis(i+121)
+        test(i+121)
+
+    print("Best_Acc_top1 = %.3f" % best_acc)
+    print("Best_Acc_top5 = %.3f" % best_acc_top5)
+    """
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(150):
         train_basis(i+1)
         test(i+1)
@@ -291,7 +323,7 @@ if 'Basis' in args.model:
 
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
-    
+    """
 else:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(150):
