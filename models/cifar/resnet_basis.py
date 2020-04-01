@@ -23,10 +23,12 @@ class BasicBlock_Basis(nn.Module):
         self.shared_basis = shared_basis
         
         self.basis_conv1 = nn.Conv2d(in_planes, rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(rank*2)
         self.coeff_conv1 = nn.Conv2d(rank*2, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         
         self.basis_conv2 = nn.Conv2d(planes, rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(rank*2)
         self.coeff_conv2 = nn.Conv2d(rank*2, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
@@ -46,9 +48,9 @@ class BasicBlock_Basis(nn.Module):
             #self.coeff_conv1.requires_grad = False
             #self.coeff_conv2.requires_grad = False
             
-            out = torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1)
+            out = self.basis_bn1(torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1))
             out = F.relu(self.bn1(self.coeff_conv1(out)))
-            out = self.bn2( self.coeff_conv2( torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1) ) )
+            out = self.bn2( self.coeff_conv2( self.basis_bn2(torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1) ) ))
             out += self.shortcut(x)
             out = F.relu(out)
             return out
