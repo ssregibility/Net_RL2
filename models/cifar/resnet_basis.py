@@ -19,17 +19,19 @@ class BasicBlock_Basis(nn.Module):
         self.mode = 'train_coeffs'
         #self.mode = 'train_basis'
         
-        self.rank = rank
         self.shared_basis = shared_basis
+
+        self.rank = rank
+        self.total_rank = rank+shared_basis.weight.shape[0]
         
         self.basis_conv1 = nn.Conv2d(in_planes, rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn1 = nn.BatchNorm2d(rank*2)
-        self.coeff_conv1 = nn.Conv2d(rank*2, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(self.total_rank)
+        self.coeff_conv1 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         
         self.basis_conv2 = nn.Conv2d(planes, rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn2 = nn.BatchNorm2d(rank*2)
-        self.coeff_conv2 = nn.Conv2d(rank*2, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
+        self.coeff_conv2 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
