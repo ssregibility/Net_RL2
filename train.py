@@ -25,6 +25,7 @@ parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
+parser.add_argument('--unique_rank', default=16, type=int, help='lambda2 (for basis loss)')
 #parser.add_argument show_loss
 #parser.add_argument show_acc
 args = parser.parse_args()
@@ -35,6 +36,7 @@ weight_decay = args.weight_decay
 lambda1 = args.lambda1
 lambda2 = args.lambda2
 rank = args.rank
+unique_rank = args.unique_rank
 
 dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
 dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis}
@@ -55,7 +57,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
 if 'Basis' in args.model:
-    net = dic_model[args.model](dic_dataset[args.dataset], rank)
+    net = dic_model[args.model](dic_dataset[args.dataset], rank, unique_rank)
 else:
     net = dic_model[args.model](dic_dataset[args.dataset])
     
