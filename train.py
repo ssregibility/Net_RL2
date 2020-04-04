@@ -39,7 +39,7 @@ rank = args.rank
 unique_rank = args.unique_rank
 
 dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis}
+dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
@@ -56,7 +56,7 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-if 'Basis' in args.model:
+if 'Basis' or 'Unique' in args.model:
     net = dic_model[args.model](dic_dataset[args.dataset], rank, unique_rank)
 else:
     net = dic_model[args.model](dic_dataset[args.dataset])
