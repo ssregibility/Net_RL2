@@ -139,7 +139,7 @@ def train_basis(epoch):
     for i in net.layer4[1:]:
         i.mode = 'train_basis'
     
-    cos_simil= nn.CosineSimilarity(dim=1)
+    cos_simil= nn.CosineSimilarity(dim=-1)
     
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
@@ -151,38 +151,105 @@ def train_basis(epoch):
         sum_cnt=0
         #l1-norm (absolute sum) of cos similarity between every shared base
         #CosineSimilarity calculates cosine similarity of tensors along dim=1
-        for i in range(net.shared_basis_1.weight.shape[0]):
-            if i+1 == net.shared_basis_1.weight.shape[0]:
-                break
-            tmp = abs(cos_simil(net.shared_basis_1.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[i].view(-1).shape[0])))[i+1:])
-            sum_simil=sum_simil + torch.sum(tmp)
-            sum_cnt=sum_cnt + tmp.shape[0]
-            
-        for i in range(net.shared_basis_2.weight.shape[0]):
-            if i+1 == net.shared_basis_2.weight.shape[0]:
-                break
-            tmp = abs(cos_simil(net.shared_basis_2.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[i].view(-1).shape[0])))[i+1:])
-            sum_simil=sum_simil + torch.sum(tmp)
-            sum_cnt=sum_cnt + tmp.shape[0]
-            
-        for i in range(net.shared_basis_3.weight.shape[0]):
-            if i+1 == net.shared_basis_3.weight.shape[0]:
-                break
-            tmp = abs(cos_simil(net.shared_basis_3.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[i].view(-1).shape[0])))[i+1:])
-            sum_simil=sum_simil + torch.sum(tmp)
-            sum_cnt=sum_cnt + tmp.shape[0]
-            
-        for i in range(net.shared_basis_4.weight.shape[0]):
-            if i+1 == net.shared_basis_4.weight.shape[0]:
-                break
-            tmp = abs(cos_simil(net.shared_basis_4.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[i].view(-1).shape[0])))[i+1:])
-            sum_simil=sum_simil + torch.sum(tmp)
-            sum_cnt=sum_cnt + tmp.shape[0]
         
-        #TODO: remove loop, calculate in a single, larger tensor
-        
+        for i in range(1,len(net.layer1)):
+            for j in range(net.layer1[i].total_rank):
+                if j+1 == net.layer1[i].total_rank:
+                    break
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer1[i].basis_conv1.weight,net.shared_basis_1.weight),dim=0).view(net.layer1[i].total_rank,-1),
+                        torch.cat((net.layer1[i].basis_conv1.weight,net.shared_basis_1.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer1[i].basis_conv2.weight,net.shared_basis_1.weight),dim=0).view(net.layer1[i].total_rank,-1),
+                        torch.cat((net.layer1[i].basis_conv2.weight,net.shared_basis_1.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+        for i in range(1,len(net.layer2)):
+            for j in range(net.layer2[i].total_rank):
+                if j+1 == net.layer2[i].total_rank:
+                    break
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer2[i].basis_conv1.weight,net.shared_basis_2.weight),dim=0).view(net.layer2[i].total_rank,-1),
+                        torch.cat((net.layer2[i].basis_conv1.weight,net.shared_basis_2.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer2[i].basis_conv2.weight,net.shared_basis_2.weight),dim=0).view(net.layer2[i].total_rank,-1),
+                        torch.cat((net.layer2[i].basis_conv2.weight,net.shared_basis_2.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+        for i in range(1,len(net.layer3)):
+            for j in range(net.layer3[i].total_rank):
+                if j+1 == net.layer3[i].total_rank:
+                    break
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer3[i].basis_conv1.weight,net.shared_basis_3.weight),dim=0).view(net.layer3[i].total_rank,-1),
+                        torch.cat((net.layer3[i].basis_conv1.weight,net.shared_basis_3.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer3[i].basis_conv2.weight,net.shared_basis_3.weight),dim=0).view(net.layer3[i].total_rank,-1),
+                        torch.cat((net.layer3[i].basis_conv2.weight,net.shared_basis_3.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+        for i in range(1,len(net.layer4)):
+            for j in range(net.layer4[i].total_rank):
+                if j+1 == net.layer4[i].total_rank:
+                    break
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer4[i].basis_conv1.weight,net.shared_basis_4.weight),dim=0).view(net.layer4[i].total_rank,-1),
+                        torch.cat((net.layer4[i].basis_conv1.weight,net.shared_basis_4.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+                tmp = abs(cos_simil(
+                        torch.cat((net.layer4[i].basis_conv2.weight,net.shared_basis_4.weight),dim=0).view(net.layer4[i].total_rank,-1),
+                        torch.cat((net.layer4[i].basis_conv2.weight,net.shared_basis_4.weight),dim=0)[j].view(-1)
+                    ))[j+1:]
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+
+            """
+            for i in range(net.shared_basis_1.weight.shape[0]):
+                if i+1 == net.shared_basis_1.weight.shape[0]:
+                    break
+                tmp = abs(cos_simil(net.shared_basis_1.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[i].view(-1).shape[0])))[i+1:])
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+
+            for i in range(net.shared_basis_2.weight.shape[0]):
+                if i+1 == net.shared_basis_2.weight.shape[0]:
+                    break
+                tmp = abs(cos_simil(net.shared_basis_2.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[i].view(-1).shape[0])))[i+1:])
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+
+            for i in range(net.shared_basis_3.weight.shape[0]):
+                if i+1 == net.shared_basis_3.weight.shape[0]:
+                    break
+                tmp = abs(cos_simil(net.shared_basis_3.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[i].view(-1).shape[0])))[i+1:])
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+
+            for i in range(net.shared_basis_4.weight.shape[0]):
+                if i+1 == net.shared_basis_4.weight.shape[0]:
+                    break
+                tmp = abs(cos_simil(net.shared_basis_4.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[i].view(-1).shape[0])))[i+1:])
+                sum_simil=sum_simil + torch.sum(tmp)
+                sum_cnt=sum_cnt + tmp.shape[0]
+            """
+            #TODO: remove loop, calculate in a single, larger tensor
+
         sum_simil = sum_simil/sum_cnt
-        
+
         loss = criterion(outputs, targets)
         if (batch_idx == 0):
             print("accuracy_loss: %.10f" % loss)
