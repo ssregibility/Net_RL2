@@ -18,7 +18,6 @@ parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambda1', default=0, type=float, help='lambda1 (for coeff loss)') #currently disabled
 parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
 parser.add_argument('--rank', default=16, type=int, help='lambda2 (for basis loss)')
 parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
@@ -26,20 +25,17 @@ parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='lambda2 (for basis loss)')
-#parser.add_argument show_loss
-#parser.add_argument show_acc
 args = parser.parse_args()
 
 lr = args.lr
 momentum = args.momentum
 weight_decay = args.weight_decay
-lambda1 = args.lambda1
 lambda2 = args.lambda2
 rank = args.rank
 unique_rank = args.unique_rank
 
 dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
+dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis}#, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
@@ -85,59 +81,13 @@ def train(epoch):
         loss.backward()
         optimizer.step()
     
-#Training for parameter shared models, only coeffs are updated
-def train_coeff(epoch):
-    print('\nCuda ' + args.visible_device + ' Coeff Epoch: %d' % epoch)
-    net.train()
+def train_unique(epoch):
+    print("placeholder")
     
-    for i in net.layer1[1:]:
-        i.mode = 'train_coeffs'
-    for i in net.layer2[1:]:
-        i.mode = 'train_coeffs'
-    for i in net.layer3[1:]:
-        i.mode = 'train_coeffs'
-    for i in net.layer4[1:]:
-        i.mode = 'train_coeffs'
-    
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.to(device), targets.to(device)
-    
-        optimizer.zero_grad()
-        outputs = net(inputs)
-    
-        #l1-norm (absolute sum) of coefficients related to shared base
-        sum_sharedcoeff = 0
-        for i in net.layer1[1:]:
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv1.weight[:,rank:,:,:]))
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank:,:,:]))
-        for i in net.layer2[1:]:
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv1.weight[:,rank*2:,:,:]))
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*2:,:,:]))
-        for i in net.layer3[1:]:
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv1.weight[:,rank*3:,:,:]))
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*3:,:,:]))
-        for i in net.layer4[1:]:
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv1.weight[:,rank*4:,:,:]))
-            sum_sharedcoeff = sum_sharedcoeff + torch.sum(abs(i.coeff_conv2.weight[:,rank*4:,:,:]))
-                    
-        loss = criterion(outputs, targets)
-        loss = loss #- lambda1*torch.log10(sum_sharedcoeff)
-        loss.backward()
-        optimizer.step()
-        
 #Training for parameter shared models, only base are updated
 def train_basis(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
-    
-    for i in net.layer1[1:]:
-        i.mode = 'train_basis'
-    for i in net.layer2[1:]:
-        i.mode = 'train_basis'
-    for i in net.layer3[1:]:
-        i.mode = 'train_basis'
-    for i in net.layer4[1:]:
-        i.mode = 'train_basis'
     
     cos_simil= nn.CosineSimilarity(dim=-1)
     
@@ -149,104 +99,101 @@ def train_basis(epoch):
         
         sum_simil=0
         sum_cnt=0
+        
         #l1-norm (absolute sum) of cos similarity between every shared base
         #CosineSimilarity calculates cosine similarity of tensors along dim=1
         
+        #group 1
+        tmp_tuple_1 = (net.shared_basis_1.weight,)
+        tmp_tuple_2 = (net.shared_basis_1.weight,)
         for i in range(1,len(net.layer1)):
-            for j in range(net.layer1[i].total_rank):
-                if j+1 == net.layer1[i].total_rank:
-                    break
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer1[i].basis_conv1.weight,net.shared_basis_1.weight),dim=0).view(net.layer1[i].total_rank,-1),
-                        torch.cat((net.layer1[i].basis_conv1.weight,net.shared_basis_1.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer1[i].basis_conv2.weight,net.shared_basis_1.weight),dim=0).view(net.layer1[i].total_rank,-1),
-                        torch.cat((net.layer1[i].basis_conv2.weight,net.shared_basis_1.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
+            tmp_tuple_1 = tmp_tuple_1 + (net.layer1[i].basis_conv1.weight,)
+            tmp_tuple_2 = tmp_tuple_2 + (net.layer1[i].basis_conv2.weight,)
+        tmp_all_1 = torch.cat(tmp_tuple_1)
+        tmp_all_2 = torch.cat(tmp_tuple_2)
+
+        for i in range(tmp_all_1.shape[0]-1):
+            tmp_1 = abs(cos_simil(
+                tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
+                tmp_all_1[i].view(-1)
+            ))
+            tmp_2 = abs(cos_simil(
+                tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
+                tmp_all_2[i].view(-1)
+            ))
+            sum_simil=sum_simil + torch.sum(tmp_1)
+            sum_cnt=sum_cnt + tmp_1.shape[0]
+            sum_simil=sum_simil + torch.sum(tmp_2)
+            sum_cnt=sum_cnt + tmp_2.shape[0]
+            
+        #group 2
+        tmp_tuple_1 = (net.shared_basis_2.weight,)
+        tmp_tuple_2 = (net.shared_basis_2.weight,)
         for i in range(1,len(net.layer2)):
-            for j in range(net.layer2[i].total_rank):
-                if j+1 == net.layer2[i].total_rank:
-                    break
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer2[i].basis_conv1.weight,net.shared_basis_2.weight),dim=0).view(net.layer2[i].total_rank,-1),
-                        torch.cat((net.layer2[i].basis_conv1.weight,net.shared_basis_2.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer2[i].basis_conv2.weight,net.shared_basis_2.weight),dim=0).view(net.layer2[i].total_rank,-1),
-                        torch.cat((net.layer2[i].basis_conv2.weight,net.shared_basis_2.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
+            tmp_tuple_1 = tmp_tuple_1 + (net.layer2[i].basis_conv1.weight,)
+            tmp_tuple_2 = tmp_tuple_2 + (net.layer2[i].basis_conv2.weight,)
+        tmp_all_1 = torch.cat(tmp_tuple_1)
+        tmp_all_2 = torch.cat(tmp_tuple_2)
+
+        for i in range(tmp_all_1.shape[0]-1):
+            tmp_1 = abs(cos_simil(
+                tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
+                tmp_all_1[i].view(-1)
+            ))
+            tmp_2 = abs(cos_simil(
+                tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
+                tmp_all_2[i].view(-1)
+            ))
+            sum_simil=sum_simil + torch.sum(tmp_1)
+            sum_cnt=sum_cnt + tmp_1.shape[0]
+            sum_simil=sum_simil + torch.sum(tmp_2)
+            sum_cnt=sum_cnt + tmp_2.shape[0]
+            
+        #group 3
+        tmp_tuple_1 = (net.shared_basis_3.weight,)
+        tmp_tuple_2 = (net.shared_basis_3.weight,)
         for i in range(1,len(net.layer3)):
-            for j in range(net.layer3[i].total_rank):
-                if j+1 == net.layer3[i].total_rank:
-                    break
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer3[i].basis_conv1.weight,net.shared_basis_3.weight),dim=0).view(net.layer3[i].total_rank,-1),
-                        torch.cat((net.layer3[i].basis_conv1.weight,net.shared_basis_3.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer3[i].basis_conv2.weight,net.shared_basis_3.weight),dim=0).view(net.layer3[i].total_rank,-1),
-                        torch.cat((net.layer3[i].basis_conv2.weight,net.shared_basis_3.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
+            tmp_tuple_1 = tmp_tuple_1 + (net.layer3[i].basis_conv1.weight,)
+            tmp_tuple_2 = tmp_tuple_2 + (net.layer3[i].basis_conv2.weight,)
+        tmp_all_1 = torch.cat(tmp_tuple_1)
+        tmp_all_2 = torch.cat(tmp_tuple_2)
+
+        for i in range(tmp_all_1.shape[0]-1):
+            tmp_1 = abs(cos_simil(
+                tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
+                tmp_all_1[i].view(-1)
+            ))
+            tmp_2 = abs(cos_simil(
+                tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
+                tmp_all_2[i].view(-1)
+            ))
+            sum_simil=sum_simil + torch.sum(tmp_1)
+            sum_cnt=sum_cnt + tmp_1.shape[0]
+            sum_simil=sum_simil + torch.sum(tmp_2)
+            sum_cnt=sum_cnt + tmp_2.shape[0]
+            
+        #group 4
+        tmp_tuple_1 = (net.shared_basis_4.weight,)
+        tmp_tuple_2 = (net.shared_basis_4.weight,)
         for i in range(1,len(net.layer4)):
-            for j in range(net.layer4[i].total_rank):
-                if j+1 == net.layer4[i].total_rank:
-                    break
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer4[i].basis_conv1.weight,net.shared_basis_4.weight),dim=0).view(net.layer4[i].total_rank,-1),
-                        torch.cat((net.layer4[i].basis_conv1.weight,net.shared_basis_4.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-                tmp = abs(cos_simil(
-                        torch.cat((net.layer4[i].basis_conv2.weight,net.shared_basis_4.weight),dim=0).view(net.layer4[i].total_rank,-1),
-                        torch.cat((net.layer4[i].basis_conv2.weight,net.shared_basis_4.weight),dim=0)[j].view(-1)
-                    ))[j+1:]
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
+            tmp_tuple_1 = tmp_tuple_1 + (net.layer4[i].basis_conv1.weight,)
+            tmp_tuple_2 = tmp_tuple_2 + (net.layer4[i].basis_conv2.weight,)
+        tmp_all_1 = torch.cat(tmp_tuple_1)
+        tmp_all_2 = torch.cat(tmp_tuple_2)
 
-            """
-            for i in range(net.shared_basis_1.weight.shape[0]):
-                if i+1 == net.shared_basis_1.weight.shape[0]:
-                    break
-                tmp = abs(cos_simil(net.shared_basis_1.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_1.weight.view((-1,net.shared_basis_1.weight[i].view(-1).shape[0])))[i+1:])
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-
-            for i in range(net.shared_basis_2.weight.shape[0]):
-                if i+1 == net.shared_basis_2.weight.shape[0]:
-                    break
-                tmp = abs(cos_simil(net.shared_basis_2.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_2.weight.view((-1,net.shared_basis_2.weight[i].view(-1).shape[0])))[i+1:])
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-
-            for i in range(net.shared_basis_3.weight.shape[0]):
-                if i+1 == net.shared_basis_3.weight.shape[0]:
-                    break
-                tmp = abs(cos_simil(net.shared_basis_3.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_3.weight.view((-1,net.shared_basis_3.weight[i].view(-1).shape[0])))[i+1:])
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-
-            for i in range(net.shared_basis_4.weight.shape[0]):
-                if i+1 == net.shared_basis_4.weight.shape[0]:
-                    break
-                tmp = abs(cos_simil(net.shared_basis_4.weight[i].view(-1).unsqueeze(dim=0),net.shared_basis_4.weight.view((-1,net.shared_basis_4.weight[i].view(-1).shape[0])))[i+1:])
-                sum_simil=sum_simil + torch.sum(tmp)
-                sum_cnt=sum_cnt + tmp.shape[0]
-            """
-            #TODO: remove loop, calculate in a single, larger tensor
+        for i in range(tmp_all_1.shape[0]-1):
+            tmp_1 = abs(cos_simil(
+                tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
+                tmp_all_1[i].view(-1)
+            ))
+            tmp_2 = abs(cos_simil(
+                tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
+                tmp_all_2[i].view(-1)
+            ))
+            sum_simil=sum_simil + torch.sum(tmp_1)
+            sum_cnt=sum_cnt + tmp_1.shape[0]
+            sum_simil=sum_simil + torch.sum(tmp_2)
+            sum_cnt=sum_cnt + tmp_2.shape[0]
 
         sum_simil = sum_simil/sum_cnt
 
@@ -296,7 +243,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt' + args.visible_device + '.pth')
+        torch.save(state, './checkpoint/ckpt' + args.visible_device + '.pthxx')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
@@ -311,20 +258,10 @@ if 'Basis' in args.model:
     for i in range(150):
         train_basis(i+1)
         test(i+1)
-    """
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-    
-    for i in range(150):
-        train_coeff(i+1)
-        test(i+1)
-    """
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -334,20 +271,9 @@ if 'Basis' in args.model:
         train_basis(i+151)
         test(i+151)
     
-    """
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
-    for i in range(75):
-        train_coeff(i+151)
-        test(i+151)
-    """
-    
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -357,20 +283,12 @@ if 'Basis' in args.model:
         train_basis(i+226)
         test(i+226)
 
-    """
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
-    for i in range(75):
-        train_coeff(i+226)
-        test(i+226)
-    """
-
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
-
+    
+elif 'Unique' in args.model:
+    print("Placeholder")
+    
 else:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(80):
@@ -379,7 +297,7 @@ else:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -391,7 +309,7 @@ else:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -403,36 +321,3 @@ else:
 
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
-    """
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    for i in range(150):
-        train(i+1)
-        test(i+1)
-    
-    #============
-    
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
-    optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
-    for i in range(75):
-        train(i+151)
-        test(i+151)
-    
-    #============
-    
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
-    optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
-    for i in range(75):
-        train(i+226)
-        test(i+226)
-
-    print("Best_Acc_top1 = %.3f" % best_acc)
-    print("Best_Acc_top5 = %.3f" % best_acc_top5)
-    """
