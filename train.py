@@ -243,7 +243,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt' + args.visible_device + '.pthxx')
+        torch.save(state, './checkpoint/ckpt' + args.visible_device + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
@@ -261,7 +261,7 @@ if 'Basis' in args.model:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -273,7 +273,7 @@ if 'Basis' in args.model:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -297,7 +297,7 @@ else:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -309,7 +309,7 @@ else:
     
     #============
     
-    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pthxx')
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
