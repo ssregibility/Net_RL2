@@ -19,12 +19,12 @@ parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
 parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
-parser.add_argument('--rank', default=16, type=int, help='lambda2 (for basis loss)')
+parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
 parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
-parser.add_argument('--unique_rank', default=16, type=int, help='lambda2 (for basis loss)')
+parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 args = parser.parse_args()
 
 lr = args.lr
@@ -51,6 +51,7 @@ testloader = utils.get_testdata(args.dataset,"./data",batch_size=args.batch_size
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
+#args.visible_device sets which cuda devices to be used"
 
 if 'Basis' or 'Unique' in args.model:
     net = dic_model[args.model](dic_dataset[args.dataset], rank, unique_rank)
@@ -59,6 +60,7 @@ else:
     
 net = net.to(device)
 
+#CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
 #Unused - reserved for different LR schedulers
@@ -81,10 +83,11 @@ def train(epoch):
         loss.backward()
         optimizer.step()
     
+#Training for models with unique base only    
 def train_unique(epoch):
     print("placeholder")
     
-#Training for parameter shared models, only base are updated
+#Training for parameter shared models
 def train_basis(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
@@ -100,7 +103,7 @@ def train_basis(epoch):
         sum_simil=0
         sum_cnt=0
         
-        #l1-norm (absolute sum) of cos similarity between every shared base
+        #absolute sum of cos similarity between every shared base
         #CosineSimilarity calculates cosine similarity of tensors along dim=1
         
         #group 1
@@ -111,7 +114,12 @@ def train_basis(epoch):
             tmp_tuple_2 = tmp_tuple_2 + (net.layer1[i].basis_conv2.weight,)
         tmp_all_1 = torch.cat(tmp_tuple_1)
         tmp_all_2 = torch.cat(tmp_tuple_2)
-
+        #tmp_all_1 and tmp_all2 contains every basis of residual blocks in group 1
+        
+        #for every basis in tmp_all_1 and tmp_all_2, calculates similarities to every other basis in the tmp_all tensor
+        #tmp_all_1[i+1:]=
+        #skips calculating itself (which the result is always 1.0)
+        #skips already calculated similarity
         for i in range(tmp_all_1.shape[0]-1):
             tmp_1 = abs(cos_simil(
                 tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
@@ -121,6 +129,8 @@ def train_basis(epoch):
                 tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
                 tmp_all_2[i].view(-1)
             ))
+            #sum_simil contains every absolute sum of cos similarity
+            #sum_cnt contains total number of base
             sum_simil=sum_simil + torch.sum(tmp_1)
             sum_cnt=sum_cnt + tmp_1.shape[0]
             sum_simil=sum_simil + torch.sum(tmp_2)
@@ -134,6 +144,12 @@ def train_basis(epoch):
             tmp_tuple_2 = tmp_tuple_2 + (net.layer2[i].basis_conv2.weight,)
         tmp_all_1 = torch.cat(tmp_tuple_1)
         tmp_all_2 = torch.cat(tmp_tuple_2)
+        #tmp_all_1 and tmp_all2 contains every basis of residual blocks in group 2
+        
+        #for every basis in tmp_all_1 and tmp_all_2, calculates similarities to every other basis in the tmp_all tensor
+        #tmp_all_1[i+1:]=
+        #skips calculating itself (which the result is always 1.0)
+        #skips already calculated similarity
 
         for i in range(tmp_all_1.shape[0]-1):
             tmp_1 = abs(cos_simil(
@@ -144,6 +160,8 @@ def train_basis(epoch):
                 tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
                 tmp_all_2[i].view(-1)
             ))
+            #sum_simil contains every absolute sum of cos similarity
+            #sum_cnt contains total number of base
             sum_simil=sum_simil + torch.sum(tmp_1)
             sum_cnt=sum_cnt + tmp_1.shape[0]
             sum_simil=sum_simil + torch.sum(tmp_2)
@@ -157,6 +175,12 @@ def train_basis(epoch):
             tmp_tuple_2 = tmp_tuple_2 + (net.layer3[i].basis_conv2.weight,)
         tmp_all_1 = torch.cat(tmp_tuple_1)
         tmp_all_2 = torch.cat(tmp_tuple_2)
+        #tmp_all_1 and tmp_all2 contains every basis of residual blocks in group 3
+        
+        #for every basis in tmp_all_1 and tmp_all_2, calculates similarities to every other basis in the tmp_all tensor
+        #tmp_all_1[i+1:]=
+        #skips calculating itself (which the result is always 1.0)
+        #skips already calculated similarity
 
         for i in range(tmp_all_1.shape[0]-1):
             tmp_1 = abs(cos_simil(
@@ -167,6 +191,8 @@ def train_basis(epoch):
                 tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
                 tmp_all_2[i].view(-1)
             ))
+            #sum_simil contains every absolute sum of cos similarity
+            #sum_cnt contains total number of base
             sum_simil=sum_simil + torch.sum(tmp_1)
             sum_cnt=sum_cnt + tmp_1.shape[0]
             sum_simil=sum_simil + torch.sum(tmp_2)
@@ -180,7 +206,13 @@ def train_basis(epoch):
             tmp_tuple_2 = tmp_tuple_2 + (net.layer4[i].basis_conv2.weight,)
         tmp_all_1 = torch.cat(tmp_tuple_1)
         tmp_all_2 = torch.cat(tmp_tuple_2)
-
+        #tmp_all_1 and tmp_all2 contains every basis of residual blocks in group 4
+        
+        #for every basis in tmp_all_1 and tmp_all_2, calculates similarities to every other basis in the tmp_all tensor
+        #tmp_all_1[i+1:]=
+        #skips calculating itself (which the result is always 1.0)
+        #skips already calculated similarity
+        
         for i in range(tmp_all_1.shape[0]-1):
             tmp_1 = abs(cos_simil(
                 tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
@@ -190,16 +222,21 @@ def train_basis(epoch):
                 tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
                 tmp_all_2[i].view(-1)
             ))
+            #sum_simil contains every absolute sum of cos similarity
+            #sum_cnt contains total number of base
             sum_simil=sum_simil + torch.sum(tmp_1)
             sum_cnt=sum_cnt + tmp_1.shape[0]
             sum_simil=sum_simil + torch.sum(tmp_2)
             sum_cnt=sum_cnt + tmp_2.shape[0]
 
+        #average of sum_simil across every base
         sum_simil = sum_simil/sum_cnt
 
+        #acc loss
         loss = criterion(outputs, targets)
         if (batch_idx == 0):
             print("accuracy_loss: %.10f" % loss)
+        #apply similarity loss, multiplied by lambda2
         loss = loss - lambda2*torch.log(1 - sum_simil)
         if (batch_idx == 0):
             print("simililarity_loss: %.10f" % torch.log(1 - sum_simil))
