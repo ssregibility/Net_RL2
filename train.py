@@ -138,6 +138,28 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
+        #similarity between base in a same group
+        len_shared = net.shared_basis_1.weight.shape[0]
+        len_unique = net.layer1[1].basis_conv1.weight.shape[0]
+        
+        for i in range(1,len(net.layer1)):
+            for j in range(len_unique-1):
+                idx = len_shared+(i-1)*len_unique + j
+                idx_end = len_shared+i*len_unique
+                
+                conv1_abssum_simil = abs(cos_simil(
+                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv1_all_basis[idx].view(-1)
+                ))
+                conv2_abssum_simil = abs(cos_simil(
+                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv2_all_basis[idx].view(-1)
+                ))
+                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+            
         #group 2
         conv1_tuple = (net.shared_basis_2.weight,)
         conv2_tuple = (net.shared_basis_2.weight,)
@@ -170,6 +192,28 @@ def train_basis(epoch):
             sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+            
+        #similarity between base in a same group
+        len_shared = net.shared_basis_2.weight.shape[0]
+        len_unique = net.layer2[1].basis_conv1.weight.shape[0]
+        
+        for i in range(1,len(net.layer2)):
+            for j in range(len_unique-1):
+                idx = len_shared+(i-1)*len_unique + j
+                idx_end = len_shared+i*len_unique
+                
+                conv1_abssum_simil = abs(cos_simil(
+                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv1_all_basis[idx].view(-1)
+                ))
+                conv2_abssum_simil = abs(cos_simil(
+                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv2_all_basis[idx].view(-1)
+                ))
+                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
         #group 3
         conv1_tuple = (net.shared_basis_3.weight,)
@@ -204,6 +248,28 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
+        #similarity between base in a same group
+        len_shared = net.shared_basis_3.weight.shape[0]
+        len_unique = net.layer3[1].basis_conv1.weight.shape[0]
+        
+        for i in range(1,len(net.layer3)):
+            for j in range(len_unique-1):
+                idx = len_shared+(i-1)*len_unique + j
+                idx_end = len_shared+i*len_unique
+                
+                conv1_abssum_simil = abs(cos_simil(
+                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv1_all_basis[idx].view(-1)
+                ))
+                conv2_abssum_simil = abs(cos_simil(
+                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv2_all_basis[idx].view(-1)
+                ))
+                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+            
         #group 4
         conv1_tuple = (net.shared_basis_4.weight,)
         conv2_tuple = (net.shared_basis_4.weight,)
@@ -236,6 +302,28 @@ def train_basis(epoch):
             sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+            
+        #similarity between base in a same group
+        len_shared = net.shared_basis_4.weight.shape[0]
+        len_unique = net.layer4[1].basis_conv1.weight.shape[0]
+        
+        for i in range(1,len(net.layer4)):
+            for j in range(len_unique-1):
+                idx = len_shared+(i-1)*len_unique + j
+                idx_end = len_shared+i*len_unique
+                
+                conv1_abssum_simil = abs(cos_simil(
+                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv1_all_basis[idx].view(-1)
+                ))
+                conv2_abssum_simil = abs(cos_simil(
+                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                    conv2_all_basis[idx].view(-1)
+                ))
+                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
 
         #average of sum_simil across every base
         sum_simil = sum_simil/sum_cnt
