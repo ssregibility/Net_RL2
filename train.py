@@ -31,7 +31,7 @@ lr = args.lr
 momentum = args.momentum
 weight_decay = args.weight_decay
 lambda2 = args.lambda2
-rank = args.rank
+shared_rank = args.shared_rank
 unique_rank = args.unique_rank
 
 dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
@@ -54,7 +54,7 @@ device='cuda'
 #args.visible_device sets which cuda devices to be used"
 
 if 'Basis' or 'Unique' in args.model:
-    net = dic_model[args.model](dic_dataset[args.dataset], rank, unique_rank)
+    net = dic_model[args.model](dic_dataset[args.dataset], shared_rank, unique_rank)
 else:
     net = dic_model[args.model](dic_dataset[args.dataset])
     
