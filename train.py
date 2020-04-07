@@ -107,34 +107,34 @@ def train_basis(epoch):
         #CosineSimilarity calculates cosine similarity of tensors along dim=1
         
         #group 1
-        tmp_tuple_1 = (net.shared_basis_1.weight,)
-        tmp_tuple_2 = (net.shared_basis_1.weight,)
+        conv1_tuple = (net.shared_basis_1.weight,)
+        conv2_tuple = (net.shared_basis_1.weight,)
         for i in range(1,len(net.layer1)):
-            tmp_tuple_1 = tmp_tuple_1 + (net.layer1[i].basis_conv1.weight,)
-            tmp_tuple_2 = tmp_tuple_2 + (net.layer1[i].basis_conv2.weight,)
-        tmp_all_1 = torch.cat(tmp_tuple_1)
-        tmp_all_2 = torch.cat(tmp_tuple_2)
-        #tmp_all_1 and tmp_all2 contains every basis of residual blocks in group 1
+            conv1_tuple = conv1_tuple + (net.layer1[i].basis_conv1.weight,)
+            conv2_tuple = conv2_tuple + (net.layer1[i].basis_conv2.weight,)
+        conv1_all_basis = torch.cat(conv1_tuple)
+        conv2_all_basis = torch.cat(conv2_tuple)
+        #conv1_all_basis and conv2_all_basis contains every base of residual blocks in group 1
         
-        #for every basis in tmp_all_1 and tmp_all_2, calculates similarities to every other basis in the tmp_all tensor
-        #tmp_all_1[i+1:]=
+        #for every basis in conv1_all_basis and conv2_all_basis, calculates similarities to every other basis in the convx_all_basis tensor
+        #convx_abssum_simil[i+1:]=
         #skips calculating itself (which the result is always 1.0)
         #skips already calculated similarity
         for i in range(tmp_all_1.shape[0]-1):
-            tmp_1 = abs(cos_simil(
-                tmp_all_1[i+1:].view(tmp_all_1.shape[0]-1-i,-1),
-                tmp_all_1[i].view(-1)
+            conv1_abssum_simil = abs(cos_simil(
+                conv1_all_basis[i+1:].view(conv1_all_basis.shape[0]-1-i,-1),
+                conv1_all_basis[i].view(-1)
             ))
-            tmp_2 = abs(cos_simil(
-                tmp_all_2[i+1:].view(tmp_all_2.shape[0]-1-i,-1),
-                tmp_all_2[i].view(-1)
+            conv2_abssum_simil = abs(cos_simil(
+                conv2_all_basis[i+1:].view(conv2_all_basis.shape[0]-1-i,-1),
+                conv2_all_basis[i].view(-1)
             ))
             #sum_simil contains every absolute sum of cos similarity
             #sum_cnt contains total number of base
-            sum_simil=sum_simil + torch.sum(tmp_1)
-            sum_cnt=sum_cnt + tmp_1.shape[0]
-            sum_simil=sum_simil + torch.sum(tmp_2)
-            sum_cnt=sum_cnt + tmp_2.shape[0]
+            sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+            sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+            sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+            sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
         #group 2
         tmp_tuple_1 = (net.shared_basis_2.weight,)
