@@ -289,7 +289,7 @@ def test(epoch):
 best_acc = 0
 best_acc_top5 = 0
 
-#For parameter shared models, training happens in two rotating stages: basis training - coeff training - basis trianig - coeff training - ...
+#For parameter shared models
 if 'Basis' in args.model:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(150):
@@ -323,9 +323,11 @@ if 'Basis' in args.model:
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
     
+#placeholder
 elif 'Unique' in args.model:
     print("Placeholder")
     
+#for models without parameter sharing
 else:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     for i in range(80):
