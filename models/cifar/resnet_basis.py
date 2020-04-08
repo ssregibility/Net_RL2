@@ -58,6 +58,7 @@ class BasicBlock_Basis(nn.Module):
     def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1):
         super(BasicBlock_Basis, self).__init__()
         
+        self.unique_rank = unique_rank
         #shared tensor - shared across basic blocks in a same group
         self.shared_basis = shared_basis
 
@@ -65,13 +66,19 @@ class BasicBlock_Basis(nn.Module):
         self.total_rank = unique_rank+shared_basis.weight.shape[0]
         
         #decomposed form of CONV1
-        self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        if unique_rank == 0:
+            self.basis_conv1 = nn.Sequential()
+        else:
+            self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
         self.basis_bn1 = nn.BatchNorm2d(self.total_rank)
         self.coeff_conv1 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         
         #decomposed form of CONV2
-        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        if unique_rank == 0:
+            self.basis_conv2 = nn.Sequential()
+        else:
+            self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
         self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
         self.coeff_conv2 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -87,11 +94,18 @@ class BasicBlock_Basis(nn.Module):
     def forward(self, x): 
         #merge feature maps from shared basis and unique basis into a single feature map by torch.cat()
         #X -> shared/unique basis -> BN -> coeff -> BN -> ReLU -> shared/uniquebasis -> BN -> coeff -> BN + Shortcut -> ReLU = Out 
-        out = self.basis_bn1(torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1))
-        out = F.relu(self.bn1(self.coeff_conv1(out)))
-        out = self.bn2( self.coeff_conv2( self.basis_bn2(torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1) ) ))
-        out += self.shortcut(x)
-        out = F.relu(out)
+        if self.unique_rank ==0:
+            out = self.basis_bn1( self.shared_basis(x) )
+            out = F.relu(self.bn1(self.coeff_conv1(out)))
+            out = self.bn2( self.coeff_conv2( self.basis_bn2( self.shared_basis(x) ) ))
+            out += self.shortcut(x)
+            out = F.relu(out)
+        else:
+            out = self.basis_bn1(torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1))
+            out = F.relu(self.bn1(self.coeff_conv1(out)))
+            out = self.bn2( self.coeff_conv2( self.basis_bn2(torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1) ) ))
+            out += self.shortcut(x)
+            out = F.relu(out)
         return out
             
 #Basic block without prameter sharing

@@ -109,20 +109,27 @@ def train_basis(epoch):
         #group 1
         conv1_tuple = (net.shared_basis_1.weight,)
         conv2_tuple = (net.shared_basis_1.weight,)
-        for i in range(1,len(net.layer1)):
-            conv1_tuple = conv1_tuple + (net.layer1[i].basis_conv1.weight,)
-            conv2_tuple = conv2_tuple + (net.layer1[i].basis_conv2.weight,)
+        if unique_rank != 0:
+            for i in range(1,len(net.layer1)):
+                conv1_tuple = conv1_tuple + (net.layer1[i].basis_conv1.weight,)
+                conv2_tuple = conv2_tuple + (net.layer1[i].basis_conv2.weight,)
         conv1_all_basis = torch.cat(conv1_tuple)
         conv2_all_basis = torch.cat(conv2_tuple)
         #conv1_all_basis and conv2_all_basis contains every base of residual blocks in group 1
         
         len_shared = net.shared_basis_1.weight.shape[0]
+        if unique_rank != 0:
+            len_unique = net.layer1[1].basis_conv1.weight.shape[0]
+        else:
+            len_unique = 0
         
         #for every basis in conv1_all_basis and conv2_all_basis, calculates similarities to every other basis in the convx_all_basis tensor
         #convx_abssum_simil[i+1:]=
         #skips calculating itself (which the result is always 1.0)
         #skips already calculated similarity
         for i in range(len_shared):
+            if len_unique == 0 and i == len_shared-1:
+                break
             conv1_abssum_simil = abs(cos_simil(
                 conv1_all_basis[i+1:].view(conv1_all_basis.shape[0]-1-i,-1),
                 conv1_all_basis[i].view(-1)
@@ -138,39 +145,45 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
-        #similarity between base in a same group
-        len_shared = net.shared_basis_1.weight.shape[0]
-        len_unique = net.layer1[1].basis_conv1.weight.shape[0]
-        
-        for i in range(1,len(net.layer1)):
-            for j in range(len_unique-1):
-                idx = len_shared+(i-1)*len_unique + j
-                idx_end = len_shared+i*len_unique
-                
-                conv1_abssum_simil = abs(cos_simil(
-                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv1_all_basis[idx].view(-1)
-                ))
-                conv2_abssum_simil = abs(cos_simil(
-                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv2_all_basis[idx].view(-1)
-                ))
-                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
-                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
-                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
-                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+        #similarity between unique base in a same residual block
+        if unique_rank != 0:
+            for i in range(1,len(net.layer1)):
+                for j in range(len_unique-1):
+                    #index of unique basis in convx_all_basis
+                    idx = len_shared+(i-1)*len_unique + j
+                    #index of last unique basis within the same residual block in convx_all_basis
+                    idx_end = len_shared+i*len_unique
+
+                    #similarity between unique base in a same residual block
+                    conv1_abssum_simil = abs(cos_simil(
+                        conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv1_all_basis[idx].view(-1)
+                    ))
+                    conv2_abssum_simil = abs(cos_simil(
+                        conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv2_all_basis[idx].view(-1)
+                    ))
+                    sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                    sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                    sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                    sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
         #group 2
         conv1_tuple = (net.shared_basis_2.weight,)
         conv2_tuple = (net.shared_basis_2.weight,)
-        for i in range(1,len(net.layer2)):
-            conv1_tuple = conv1_tuple + (net.layer2[i].basis_conv1.weight,)
-            conv2_tuple = conv2_tuple + (net.layer2[i].basis_conv2.weight,)
+        if unique_rank != 0:
+            for i in range(1,len(net.layer2)):
+                conv1_tuple = conv1_tuple + (net.layer2[i].basis_conv1.weight,)
+                conv2_tuple = conv2_tuple + (net.layer2[i].basis_conv2.weight,)
         conv1_all_basis = torch.cat(conv1_tuple)
         conv2_all_basis = torch.cat(conv2_tuple)
         #conv1_all_basis and conv2_all_basis contains every basis of residual blocks in group 2
         
         len_shared = net.shared_basis_2.weight.shape[0]
+        if unique_rank != 0:
+            len_unique = net.layer2[1].basis_conv1.weight.shape[0]
+        else:
+            len_unique = 0
         
         #for every basis in conv1_all_basis and conv2_all_basis, calculates similarities to every other basis in the convx_all_basis tensor
         #convx_all_basis[i+1:]=
@@ -178,6 +191,8 @@ def train_basis(epoch):
         #skips already calculated similarity
 
         for i in range(len_shared):
+            if len_unique == 0 and i == len_shared-1:
+                break
             conv1_abssum_simil = abs(cos_simil(
                 conv1_all_basis[i+1:].view(conv1_all_basis.shape[0]-1-i,-1),
                 conv1_all_basis[i].view(-1)
@@ -193,39 +208,45 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
-        #similarity between base in a same group
-        len_shared = net.shared_basis_2.weight.shape[0]
-        len_unique = net.layer2[1].basis_conv1.weight.shape[0]
-        
-        for i in range(1,len(net.layer2)):
-            for j in range(len_unique-1):
-                idx = len_shared+(i-1)*len_unique + j
-                idx_end = len_shared+i*len_unique
-                
-                conv1_abssum_simil = abs(cos_simil(
-                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv1_all_basis[idx].view(-1)
-                ))
-                conv2_abssum_simil = abs(cos_simil(
-                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv2_all_basis[idx].view(-1)
-                ))
-                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
-                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
-                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
-                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+        #similarity between unique base in a same residual block
+        if unique_rank != 0:
+            for i in range(1,len(net.layer2)):
+                for j in range(len_unique-1):
+                    #index of unique basis in convx_all_basis
+                    idx = len_shared+(i-1)*len_unique + j
+                    #index of last unique basis within the same residual block in convx_all_basis
+                    idx_end = len_shared+i*len_unique
+
+                    #similarity between unique base in a same residual block
+                    conv1_abssum_simil = abs(cos_simil(
+                        conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv1_all_basis[idx].view(-1)
+                    ))
+                    conv2_abssum_simil = abs(cos_simil(
+                        conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv2_all_basis[idx].view(-1)
+                    ))
+                    sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                    sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                    sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                    sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
         #group 3
         conv1_tuple = (net.shared_basis_3.weight,)
         conv2_tuple = (net.shared_basis_3.weight,)
-        for i in range(1,len(net.layer3)):
-            conv1_tuple = conv1_tuple + (net.layer3[i].basis_conv1.weight,)
-            conv2_tuple = conv2_tuple + (net.layer3[i].basis_conv2.weight,)
+        if unique_rank != 0:
+            for i in range(1,len(net.layer3)):
+                conv1_tuple = conv1_tuple + (net.layer3[i].basis_conv1.weight,)
+                conv2_tuple = conv2_tuple + (net.layer3[i].basis_conv2.weight,)
         conv1_all_basis = torch.cat(conv1_tuple)
         conv2_all_basis = torch.cat(conv2_tuple)
         #conv1_all_basis and conv2_all_basis contains every basis of residual blocks in group 3
         
         len_shared = net.shared_basis_3.weight.shape[0]
+        if unique_rank != 0:
+            len_unique = net.layer3[1].basis_conv1.weight.shape[0]
+        else:
+            len_unique = 0
         
         #for every basis in conv1_all_basis and conv2_all_basis, calculates similarities to every other basis in the convx_all_basis tensor
         #convx_all_basis[i+1:]=
@@ -233,6 +254,8 @@ def train_basis(epoch):
         #skips already calculated similarity
 
         for i in range(len_shared):
+            if len_unique == 0 and i == len_shared-1:
+                break
             conv1_abssum_simil = abs(cos_simil(
                 conv1_all_basis[i+1:].view(conv1_all_basis.shape[0]-1-i,-1),
                 conv1_all_basis[i].view(-1)
@@ -248,39 +271,44 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
-        #similarity between base in a same group
-        len_shared = net.shared_basis_3.weight.shape[0]
-        len_unique = net.layer3[1].basis_conv1.weight.shape[0]
-        
-        for i in range(1,len(net.layer3)):
-            for j in range(len_unique-1):
-                idx = len_shared+(i-1)*len_unique + j
-                idx_end = len_shared+i*len_unique
-                
-                conv1_abssum_simil = abs(cos_simil(
-                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv1_all_basis[idx].view(-1)
-                ))
-                conv2_abssum_simil = abs(cos_simil(
-                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv2_all_basis[idx].view(-1)
-                ))
-                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
-                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
-                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
-                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+        #similarity between unique base in a same residual block
+        if unique_rank != 0:
+            for i in range(1,len(net.layer3)):
+                for j in range(len_unique-1):
+                    #index of unique basis in convx_all_basis
+                    idx = len_shared+(i-1)*len_unique + j
+                    #index of last unique basis within the same residual block in convx_all_basis
+                    idx_end = len_shared+i*len_unique
+                    #index of last unique basis within the same residual block in convx_all_basis
+                    conv1_abssum_simil = abs(cos_simil(
+                        conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv1_all_basis[idx].view(-1)
+                    ))
+                    conv2_abssum_simil = abs(cos_simil(
+                        conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv2_all_basis[idx].view(-1)
+                    ))
+                    sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                    sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                    sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                    sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
         #group 4
         conv1_tuple = (net.shared_basis_4.weight,)
         conv2_tuple = (net.shared_basis_4.weight,)
-        for i in range(1,len(net.layer4)):
-            conv1_tuple = conv1_tuple + (net.layer4[i].basis_conv1.weight,)
-            conv2_tuple = conv2_tuple + (net.layer4[i].basis_conv2.weight,)
+        if unique_rank != 0:
+            for i in range(1,len(net.layer4)):
+                conv1_tuple = conv1_tuple + (net.layer4[i].basis_conv1.weight,)
+                conv2_tuple = conv2_tuple + (net.layer4[i].basis_conv2.weight,)
         conv1_all_basis = torch.cat(conv1_tuple)
         conv2_all_basis = torch.cat(conv2_tuple)
         #conv1_all_basis and conv2_all_basis contains every basis of residual blocks in group 4
         
         len_shared = net.shared_basis_4.weight.shape[0]
+        if unique_rank != 0:
+            len_unique = net.layer4[1].basis_conv1.weight.shape[0]
+        else:
+            len_unique = 0
         
         #for every basis in conv1_all_basis and conv2_all_basis, calculates similarities to every other basis in the convx_all_basis tensor
         #convx_all_basis[i+1:]=
@@ -288,6 +316,8 @@ def train_basis(epoch):
         #skips already calculated similarity
         
         for i in range(len_shared):
+            if len_unique == 0 and i == len_shared-1:
+                break
             conv1_abssum_simil = abs(cos_simil(
                 conv1_all_basis[i+1:].view(conv1_all_basis.shape[0]-1-i,-1),
                 conv1_all_basis[i].view(-1)
@@ -303,27 +333,28 @@ def train_basis(epoch):
             sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
             sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
             
-        #similarity between base in a same group
-        len_shared = net.shared_basis_4.weight.shape[0]
-        len_unique = net.layer4[1].basis_conv1.weight.shape[0]
-        
-        for i in range(1,len(net.layer4)):
-            for j in range(len_unique-1):
-                idx = len_shared+(i-1)*len_unique + j
-                idx_end = len_shared+i*len_unique
-                
-                conv1_abssum_simil = abs(cos_simil(
-                    conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv1_all_basis[idx].view(-1)
-                ))
-                conv2_abssum_simil = abs(cos_simil(
-                    conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
-                    conv2_all_basis[idx].view(-1)
-                ))
-                sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
-                sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
-                sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
-                sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
+        #similarity between unique base in a same residual block
+        if unique_rank != 0:
+            for i in range(1,len(net.layer4)):
+                for j in range(len_unique-1):
+                    #index of unique basis in convx_all_basis
+                    idx = len_shared+(i-1)*len_unique + j
+                    #index of last unique basis within the same residual block in convx_all_basis
+                    idx_end = len_shared+i*len_unique
+
+                    #similarity between unique base in a same residual block
+                    conv1_abssum_simil = abs(cos_simil(
+                        conv1_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv1_all_basis[idx].view(-1)
+                    ))
+                    conv2_abssum_simil = abs(cos_simil(
+                        conv2_all_basis[idx+1:idx_end].view(idx_end-idx-1,-1),
+                        conv2_all_basis[idx].view(-1)
+                    ))
+                    sum_simil=sum_simil + torch.sum(conv1_abssum_simil)
+                    sum_cnt=sum_cnt + conv1_abssum_simil.shape[0]
+                    sum_simil=sum_simil + torch.sum(conv2_abssum_simil)
+                    sum_cnt=sum_cnt + conv2_abssum_simil.shape[0]
 
         #average of sum_simil across every base
         sum_simil = sum_simil/sum_cnt
