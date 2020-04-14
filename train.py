@@ -25,6 +25,7 @@ parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
+parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
 args = parser.parse_args()
 
 lr = args.lr
@@ -60,6 +61,12 @@ else:
     
 net = net.to(device)
 
+if args.pretrained != None:
+    checkpoint = torch.load(args.pretrained)
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+                    
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
