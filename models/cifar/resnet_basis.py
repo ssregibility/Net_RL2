@@ -17,15 +17,15 @@ class BasicBlock_Unique(nn.Module):
         super(BasicBlock_Unique, self).__init__()
         
         #decomposed form of CONV1
-        self.basis_conv1 = nn.Conv2d(in_planes, unique_  , kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn1 = nn.BatchNorm2d(self.unique_rank) #might not be required anymore, since there is no parameter sharing anymore
-        self.coeff_conv1 = nn.Conv2d(self.unique_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(unique_rank) #might not be required anymore, since there is no parameter sharing anymore
+        self.coeff_conv1 = nn.Conv2d(unique_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         
         #decomposed form of CONV2
         self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn2 = nn.BatchNorm2d(self.unique_rank) #might not be required anymore, since there is no parameter sharing anymore
-        self.coeff_conv2 = nn.Conv2d(self.unique_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(unique_rank) #might not be required anymore, since there is no parameter sharing anymore
+        self.coeff_conv2 = nn.Conv2d(unique_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         #Identity
@@ -198,7 +198,7 @@ class ResNet_Unique(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         
         self.layer1 = self._make_layer(block, block_without_basis, 64, num_blocks[0], unique_rank, stride=1)
-        self.layer2 = self._make_layer(block, block_without_basis, 128, num_blocks[1], unique_unique_rank*2, stride=2)
+        self.layer2 = self._make_layer(block, block_without_basis, 128, num_blocks[1], unique_rank*2, stride=2)
         self.layer3 = self._make_layer(block, block_without_basis, 256, num_blocks[2], unique_rank*4, stride=2)
         self.layer4 = self._make_layer(block, block_without_basis, 512, num_blocks[3], unique_rank*8, stride=2)
         self.linear = nn.Linear(512*block.expansion, num_classes)

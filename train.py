@@ -26,6 +26,7 @@ parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, R
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
+parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
 args = parser.parse_args()
 
 lr = args.lr
@@ -36,7 +37,7 @@ shared_rank = args.shared_rank
 unique_rank = args.unique_rank
 
 dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis}#, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
+dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
@@ -54,8 +55,10 @@ os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 #args.visible_device sets which cuda devices to be used"
 
-if 'Basis' or 'Unique' in args.model:
+if 'Basis' in args.model:
     net = dic_model[args.model](dic_dataset[args.dataset], shared_rank, unique_rank)
+elif 'Unique' in args.model:
+    net = dic_model[args.model](dic_dataset[args.dataset], unique_rank)
 else:
     net = dic_model[args.model](dic_dataset[args.dataset])
     
@@ -77,6 +80,9 @@ def get_lr(optimizer):
 
 #Training for standard models
 def train(epoch):
+    if epoch < args.starting_epoch:
+        return
+    
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -92,10 +98,27 @@ def train(epoch):
     
 #Training for models with unique base only    
 def train_unique(epoch):
-    print("placeholder")
+    if epoch < args.starting_epoch:
+        return
+    
+    print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
+    net.train()
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+                        
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
     
 #Training for parameter shared models
 def train_basis(epoch):
+    if epoch < args.starting_epoch:
+        return
+    
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -380,6 +403,8 @@ def train_basis(epoch):
     
 #Test for models
 def test(epoch):
+    if epoch < args.starting_epoch:
+        return
     global best_acc
     global best_acc_top5
     net.eval()
@@ -426,6 +451,7 @@ best_acc_top5 = 0
 #For parameter shared models
 if 'Basis' in args.model:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    
     for i in range(150):
         train_basis(i+1)
         test(i+1)
@@ -459,12 +485,8 @@ if 'Basis' in args.model:
     
 #placeholder
 elif 'Unique' in args.model:
-    print("Placeholder")
-    
-#for models without parameter sharing
-else:
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
-    for i in range(80):
+    for i in range(150):
         train(i+1)
         test(i+1)
     
@@ -476,7 +498,7 @@ else:
     start_epoch = checkpoint['epoch']
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
-    for i in range(40):
+    for i in range(75):
         train(i+81)
         test(i+81)
     
@@ -488,7 +510,41 @@ else:
     start_epoch = checkpoint['epoch']
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
-    for i in range(40):
+    for i in range(75):
+        train(i+121)
+        test(i+121)
+
+    print("Best_Acc_top1 = %.3f" % best_acc)
+    print("Best_Acc_top5 = %.3f" % best_acc_top5)
+    
+#for models without parameter sharing
+else:
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    for i in range(150):
+        train(i+1)
+        test(i+1)
+    
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
+        train(i+81)
+        test(i+81)
+    
+    #============
+    
+    checkpoint = torch.load('./checkpoint/ckpt' + args.visible_device + '.pth')
+    net.load_state_dict(checkpoint['net'])
+    best_acc = checkpoint['acc']
+    start_epoch = checkpoint['epoch']
+
+    optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
+    for i in range(75):
         train(i+121)
         test(i+121)
 
