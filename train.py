@@ -499,8 +499,8 @@ elif 'Unique' in args.model:
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
     for i in range(75):
-        train(i+81)
-        test(i+81)
+        train(i+151)
+        test(i+151)
     
     #============
     
@@ -511,8 +511,8 @@ elif 'Unique' in args.model:
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
     for i in range(75):
-        train(i+121)
-        test(i+121)
+        train(i+226)
+        test(i+226)
 
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
@@ -533,8 +533,8 @@ else:
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.1, momentum=momentum, weight_decay=weight_decay)
     for i in range(75):
-        train(i+81)
-        test(i+81)
+        train(i+151)
+        test(i+151)
     
     #============
     
@@ -545,8 +545,8 @@ else:
 
     optimizer = optim.SGD(net.parameters(), lr=lr*0.01, momentum=momentum, weight_decay=weight_decay)
     for i in range(75):
-        train(i+121)
-        test(i+121)
+        train(i+226)
+        test(i+226)
 
     print("Best_Acc_top1 = %.3f" % best_acc)
     print("Best_Acc_top5 = %.3f" % best_acc_top5)
