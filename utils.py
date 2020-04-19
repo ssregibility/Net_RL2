@@ -49,7 +49,7 @@ def get_traindata(dataset, root, train=True, download=False, shuffle=True, batch
         data = torchvision.datasets.__dict__[dataset](root=root, train=train, download=download, transform=transform)
         trainloader = torch.utils.data.DataLoader(data,batch_size=batch_size,shuffle=shuffle,num_workers=num_workers,pin_memory=True)
         
-    elif dataset=='ImageNet':
+    elif dataset=='ILSVRC2012':
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         
         data = datasets.ImageFolder(
@@ -92,7 +92,7 @@ def get_testdata(dataset, root, train=False, download=False, shuffle=False, batc
         data = torchvision.datasets.__dict__[dataset](root=root, train=train, download=download, transform=transform)
         testloader = torch.utils.data.DataLoader(data,batch_size=batch_size,shuffle=shuffle,num_workers=num_workers,pin_memory=True)
     
-    elif dataset=='ImageNet':
+    elif dataset=='ILSVRC2012':
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         
         testloader = torch.utils.data.DataLoader(

@@ -10,7 +10,6 @@ import sys
 import os
 import argparse
 
-from models.cifar import resnet, resnet_basis
 import utils
 
 #Possible arguments
@@ -20,14 +19,20 @@ parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
 parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
-parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
+parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100, ILSVRC2012')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
-parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
+parser.add_argument('--model', default="ResNet34", help='ResNet34, ResNet18, ResNet34_Basis, ResNet34_Unique')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
+parser.add_argument('--dataset_path', default="./data", help='dataset path')
 args = parser.parse_args()
+
+if 'CIFAR' in args.dataset:
+    from models.cifar import resnet, resnet_basis
+if 'ILSVRC' in args.dataset:
+    from models.ilsvrc import resnet, resnet_basis
 
 lr = args.lr
 momentum = args.momentum
@@ -35,20 +40,25 @@ weight_decay = args.weight_decay
 lambda2 = args.lambda2
 shared_rank = args.shared_rank
 unique_rank = args.unique_rank
-
-dic_dataset = {'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet152':resnet.ResNet152,'ResNet101':resnet.ResNet101,'ResNet50':resnet.ResNet50,'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis,'ResNet18_Basis':resnet_basis.ResNet18_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
+    
+dic_dataset = {'ILSVRC2012':1000, 'CIFAR100':100, 'CIFAR10':10}
+dic_model = {'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
     sys.exit()
 
+#if 'CIFAR' in args.dataset:
+#    from models.cifar import resnet, resnet_basis
+#elif 'ILSVRC' in args.dataset:
+    
 if args.model not in dic_model:
     print("The model is currently not supported")
     sys.exit()
 
-trainloader = utils.get_traindata(args.dataset,"./data",batch_size=args.batch_size,download=True)
-testloader = utils.get_testdata(args.dataset,"./data",batch_size=args.batch_size)
+trainloader = utils.get_traindata(args.dataset,args.dataset_path,batch_size=args.batch_size,download=True)
+testloader = utils.get_testdata(args.dataset,args.dataset_path,batch_size=args.batch_size)
+
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
