@@ -21,7 +21,7 @@ parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for bas
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
 parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100, ILSVRC2012')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
-parser.add_argument('--model', default="ResNet34", help='ResNet34, ResNet18, ResNet34_Basis, ResNet34_Unique')
+parser.add_argument('--model', default="ResNet34", help='ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet34_Unique, ResNext50, ResNext101')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
@@ -30,7 +30,7 @@ parser.add_argument('--dataset_path', default="./data", help='dataset path')
 args = parser.parse_args()
 
 if 'CIFAR' in args.dataset:
-    from models.cifar import resnet, resnet_basis
+    from models.cifar import resnet, resnet_basis, resnext
 if 'ILSVRC' in args.dataset:
     from models.ilsvrc import resnet, resnet_basis
 
@@ -42,7 +42,7 @@ shared_rank = args.shared_rank
 unique_rank = args.unique_rank
     
 dic_dataset = {'ILSVRC2012':1000, 'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique}
+dic_model = {'ResNet50': resnet.ResNet50, 'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext101':resnext.ResNext101_32x8d}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
