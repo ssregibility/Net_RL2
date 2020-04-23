@@ -54,16 +54,16 @@ class BasicBlock_Basis(nn.Module):
         #X -> shared/unique basis -> BN -> coeff -> BN -> ReLU -> shared/uniquebasis -> BN -> coeff -> BN + Shortcut -> ReLU = Out 
         if self.unique_rank ==0:
             out = self.basis_bn1( self.shared_basis(x) )
-            out = F.relu(self.bn1(self.coeff_conv1(out)))
+            out = F.relu(self.bn1(self.coeff_conv1(out)),inplace=True)
             out = self.bn2( self.coeff_conv2( self.basis_bn2( self.shared_basis(x) ) ))
             out += self.shortcut(x)
-            out = F.relu(out)
+            out = F.relu(out,inplace=True)
         else:
             out = self.basis_bn1(torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1))
-            out = F.relu(self.bn1(self.coeff_conv1(out)))
+            out = F.relu(self.bn1(self.coeff_conv1(out)),inplace=True)
             out = self.bn2( self.coeff_conv2( self.basis_bn2(torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1) ) ))
             out += self.shortcut(x)
-            out = F.relu(out)
+            out = F.relu(out,inplace=True)
         return out
             
 #Basic block without prameter sharing
@@ -89,10 +89,10 @@ class BasicBlock(nn.Module):
             )
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn1(self.conv1(x)),inplace=True)
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = F.relu(out)
+        out = F.relu(out,inplace=True)
         return out
                            
 #Resnet with prameter sharing
@@ -148,7 +148,7 @@ class ResNet_Basis(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = self.maxpool(F.relu(self.bn1(self.conv1(x))))
+        out = self.maxpool(F.relu(self.bn1(self.conv1(x)),inplace=True))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
