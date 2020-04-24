@@ -90,8 +90,12 @@ class BasicBlock_Basis(nn.Module):
                 nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.expansion*planes)
             )
+            
+        # Orthogonal initialization
+        all_basis_filters = torch.cat((self.shared_basis.weight, self.basis_conv1.weight, self.basis_conv2.weight))
+        nn.init.orthogonal_(all_basis_filters)
 
-    def forward(self, x): 
+        def forward(self, x): 
         #merge feature maps from shared basis and unique basis into a single feature map by torch.cat()
         #X -> shared/unique basis -> BN -> coeff -> BN -> ReLU -> shared/uniquebasis -> BN -> coeff -> BN + Shortcut -> ReLU = Out 
         if self.unique_rank ==0:
