@@ -125,7 +125,7 @@ def train_unique(epoch):
         optimizer.step()
     
 #Training for parameter shared models
-def train_basis(epoch):
+def train_basis_orig(epoch):
     if epoch < args.starting_epoch:
         return
     
@@ -410,6 +410,105 @@ def train_basis(epoch):
             print("similarity:%.3f" % sum_simil)
         loss.backward()
         optimizer.step()
+        
+# Training for parameter shared models
+# Use the property of orthogonal matrices;
+# e.g.: AxA.T = I if A is orthogonal 
+def train_basis(epoch):
+    if epoch < args.starting_epoch:
+        return
+    
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+
+        # get similarity of all basis filters
+        
+        #group 1
+        num_shared_basis = net.shared_basis_1.weight.shape[0]
+        num_unique_basis = net.layer1[1].basis_conv1.weight.shape[0] * (len(net.layer1)-1) * 2
+        all_basis =(net.shared_basis_1.weight,)
+        for i in range(1, len(net.layer1)):
+            all_basis = all_basis + (net.layer1[i].basis_conv1.weight,)
+            all_basis = all_basis + (net.layer1[i].basis_conv2.weight,)
+
+        B = torch.cat(all_basis).view(num_shared_basis+num_unique_basis, -1)
+
+        # normalize. 1e-3 for numerical stability
+        B = B / (B[0,0] + 1e-3) 
+
+        # compute orthogonalities 
+        D = torch.triu(torch.mm(B, torch.t(B)), diagonal=1)
+
+        # Use either 1. or 2. 
+        # 1. Similarities only between basis in a layer
+        #sim = torch.mean(torch.abs(D[0:num_shared_basis,]))
+
+        # 2. Similiarities including between unique basis in different layers
+        sim = torch.mean(torch.abs(D))
+
+        #group 2
+        num_shared_basis = net.shared_basis_2.weight.shape[0]
+        num_unique_basis = net.layer2[1].basis_conv1.weight.shape[0] * (len(net.layer2)-1) * 2
+        all_basis =(net.shared_basis_2.weight,)
+        for i in range(1, len(net.layer2)):
+            all_basis = all_basis + (net.layer2[i].basis_conv1.weight,)
+            all_basis = all_basis + (net.layer2[i].basis_conv2.weight,)
+
+        B = torch.cat(all_basis).view(num_shared_basis+num_unique_basis, -1)
+        B = B / (B[0,0] + 1e-3) # 1e-3 for numerical stability
+        D = torch.triu(torch.mm(B, torch.t(B)), diagonal=1)
+        #sim = sim + torch.mean(torch.abs(D[0:num_shared_basis,]))
+        sim = sim + torch.mean(torch.abs(D))
+
+        #group 3
+        num_shared_basis = net.shared_basis_3.weight.shape[0]
+        num_unique_basis = net.layer3[1].basis_conv1.weight.shape[0] * (len(net.layer3)-1) * 2
+        all_basis =(net.shared_basis_3.weight,)
+        for i in range(1, len(net.layer3)):
+            all_basis = all_basis + (net.layer3[i].basis_conv1.weight,)
+            all_basis = all_basis + (net.layer3[i].basis_conv2.weight,)
+
+        B = torch.cat(all_basis).view(num_shared_basis+num_unique_basis, -1)
+        B = B / (B[0,0] + 1e-3) # 1e-3 for numerical stability
+        D = torch.triu(torch.mm(B, torch.t(B)), diagonal=1)
+        #sim = sim + torch.mean(torch.abs(D[0:num_shared_basis,]))
+        sim = sim + torch.mean(torch.abs(D))
+
+        #group 4
+        num_shared_basis = net.shared_basis_4.weight.shape[0]
+        num_unique_basis = net.layer4[1].basis_conv1.weight.shape[0] * (len(net.layer4)-1) * 2
+        all_basis =(net.shared_basis_4.weight,)
+        for i in range(1, len(net.layer4)):
+            all_basis = all_basis + (net.layer4[i].basis_conv1.weight,)
+            all_basis = all_basis + (net.layer4[i].basis_conv2.weight,)
+
+        B = torch.cat(all_basis).view(num_shared_basis+num_unique_basis, -1)
+        B = B / (B[0,0] + 1e-3) # 1e-3 for numerical stability
+        D = torch.triu(torch.mm(B, torch.t(B)), diagonal=1)
+        #sim = sim + torch.mean(torch.abs(D[0:num_shared_basis,]))
+        sim = sim + torch.mean(torch.abs(D))
+        
+        #average similarity
+        avg_sim = sim / 4.0
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % (-torch.log(1.0-avg_sim)))
+
+        #apply similarity loss, multiplied by lambda2
+        loss = loss - lambda2 * torch.log(1.0 - avg_sim)
+        loss.backward()
+        optimizer.step()
+   
     
 #Test for models
 def test(epoch):
