@@ -452,9 +452,11 @@ def train_basis(epoch):
         #print("D size:", D.shape)
 
         # orthogonalities btwn shared<->(shared,unique)
-        sim = sim + torch.sum(D[0:num_shared_basis,:])
-        cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        
+        #sim = sim + torch.sum(D[0:num_shared_basis,:])
+        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
+        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+        cnt_sim = cnt_sim + num_shared_basis**2
+        ''' 
         # orthogonalities btwn unique<->unique in the same layer
         for i in range(1, len(net.layer1)):
             for j in range(2):  # conv1 & conv2
@@ -464,7 +466,7 @@ def train_basis(epoch):
                 sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
                                          idx_base:idx_base+num_unique_basis])
                 cnt_sim = cnt_sim + num_unique_basis ** 2 
-
+        '''
         #group 2
         num_shared_basis = net.shared_basis_2.weight.shape[0]
         num_unique_basis = net.layer2[1].basis_conv1.weight.shape[0] 
@@ -483,9 +485,11 @@ def train_basis(epoch):
         D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
 
         # orthogonalities btwn shared<->(shared,unique)
-        sim = sim + torch.sum(D[0:num_shared_basis,:])
-        cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        
+        #sim = sim + torch.sum(D[0:num_shared_basis,:])
+        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
+        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+        cnt_sim = cnt_sim + num_shared_basis**2
+        ''' 
         # orthogonalities btwn unique<->unique in the same layer
         for i in range(1, len(net.layer2)):
             for j in range(2):  # conv1 & conv2
@@ -495,7 +499,7 @@ def train_basis(epoch):
                 sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
                                          idx_base:idx_base+num_unique_basis])
                 cnt_sim = cnt_sim + num_unique_basis ** 2 
-
+        '''
         #group 3
         num_shared_basis = net.shared_basis_3.weight.shape[0]
         num_unique_basis = net.layer3[1].basis_conv1.weight.shape[0] 
@@ -514,9 +518,11 @@ def train_basis(epoch):
         D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
 
         # orthogonalities btwn shared<->(shared,unique)
-        sim = sim + torch.sum(D[0:num_shared_basis,:])
-        cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        
+        #sim = sim + torch.sum(D[0:num_shared_basis,:])
+        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
+        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+        cnt_sim = cnt_sim + num_shared_basis**2
+        ''' 
         # orthogonalities btwn unique<->unique in the same layer
         for i in range(1, len(net.layer3)):
             for j in range(2):  # conv1 & conv2
@@ -526,7 +532,7 @@ def train_basis(epoch):
                 sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
                                          idx_base:idx_base+num_unique_basis])
                 cnt_sim = cnt_sim + num_unique_basis ** 2 
-
+        '''
         #group 4
         num_shared_basis = net.shared_basis_4.weight.shape[0]
         num_unique_basis = net.layer4[1].basis_conv1.weight.shape[0] 
@@ -543,11 +549,13 @@ def train_basis(epoch):
 
         # make diagonal zeros
         D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
-
-        # orthogonalities btwn shared<->(shared,unique)
-        sim = sim + torch.sum(D[0:num_shared_basis,:])
-        cnt_sim = cnt_sim + num_shared_basis*num_all_basis
         
+        # orthogonalities btwn shared<->(shared,unique)
+        #sim = sim + torch.sum(D[0:num_shared_basis,:])
+        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
+        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+        cnt_sim = cnt_sim + num_shared_basis**2
+        ''' 
         # orthogonalities btwn unique<->unique in the same layer
         for i in range(1, len(net.layer4)):
             for j in range(2):  # conv1 & conv2
@@ -557,6 +565,7 @@ def train_basis(epoch):
                 sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
                                          idx_base:idx_base+num_unique_basis])
                 cnt_sim = cnt_sim + num_unique_basis ** 2 
+        '''
  
         #average similarity
         avg_sim = sim / cnt_sim
