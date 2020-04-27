@@ -92,8 +92,7 @@ class BasicBlock_Basis(nn.Module):
             )
             
         # Orthogonal initialization
-        all_basis_filters = torch.cat((self.shared_basis.weight, self.basis_conv1.weight, self.basis_conv2.weight))
-        nn.init.orthogonal_(all_basis_filters)
+        nn.init.orthogonal_(self.shared_basis.weight)
 
     def forward(self, x): 
         #merge feature maps from shared basis and unique basis into a single feature map by torch.cat()
