@@ -414,7 +414,7 @@ def train_basis_orig(epoch):
 # Training for parameter shared models
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch):
+def train_basis(epoch, include_unique_basis=False):
     if epoch < args.starting_epoch:
         return
     
@@ -427,146 +427,55 @@ def train_basis(epoch):
         optimizer.zero_grad()
         outputs = net(inputs)
 
-        # get similarity of all basis filters
-       
+        # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
+        for gid in range(1, 5):  # ResNet has 4 groups
+            layer = getattr(net, "layer"+str(gid))
+            shared_basis = getattr(net,"shared_basis_"+str(gid))
 
-        #group 1
-        num_shared_basis = net.shared_basis_1.weight.shape[0]
-        num_unique_basis = net.layer1[1].basis_conv1.weight.shape[0] 
-        num_all_basis = num_shared_basis + (num_unique_basis * 2 * (len(net.layer1) -1))
-        #print("net.layer1 size", len(net.layer1))
-        all_basis =(net.shared_basis_1.weight,)
-        for i in range(1, len(net.layer1)):
-            all_basis = all_basis +(net.layer1[i].basis_conv1.weight, net.layer1[i].basis_conv2.weight,)
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
 
-        B = torch.cat(all_basis).view(num_all_basis, -1)
-        #print("B size:", B.shape)
+            all_basis =(shared_basis.weight,)
+            if (include_unique_basis == True):  
+                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
+                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
+                for i in range(1, len(layer)):
+                    all_basis += (layer[i].basis_conv1.weight, \
+                            layer[i].basis_conv2.weight,)
 
-        # compute orthogonalities btwn all baisis  
-        D = torch.mm(B, torch.t(B)) 
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
 
-        # make diagonal zeros
-        D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
-        #print("D size:", D.shape)
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
 
-        # orthogonalities btwn shared<->(shared,unique)
-        #sim = sim + torch.sum(D[0:num_shared_basis,:])
-        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-        cnt_sim = cnt_sim + num_shared_basis**2
-        ''' 
-        # orthogonalities btwn unique<->unique in the same layer
-        for i in range(1, len(net.layer1)):
-            for j in range(2):  # conv1 & conv2
-                idx_base = num_shared_basis   \
+            # make diagonal zeros
+            D = torch.abs(D - \
+                    torch.eye(num_all_basis, num_all_basis, device=device))
+            #print("D size:", D.shape)
+         
+            if (include_unique_basis == True):  
+                # orthogonalities btwn shared<->(shared/unique)
+                sim += torch.sum(D[0:num_shared_basis,:])  
+                cnt_sim += num_shared_basis*num_all_basis
+
+                # orthogonalities btwn unique<->unique in the same layer
+                for i in range(1, len(layer)):
+                    for j in range(2):  # conv1 & conv2
+                         idx_base = num_shared_basis   \
                           + (i-1) * (num_unique_basis) * 2 \
                           + num_unique_basis * j 
-                sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
-                                         idx_base:idx_base+num_unique_basis])
-                cnt_sim = cnt_sim + num_unique_basis ** 2 
-        '''
-        #group 2
-        num_shared_basis = net.shared_basis_2.weight.shape[0]
-        num_unique_basis = net.layer2[1].basis_conv1.weight.shape[0] 
-        num_all_basis = num_shared_basis + (num_unique_basis * 2 * (len(net.layer2) -1))
-        #print("net.layer1 size", len(net.layer1))
-        all_basis =(net.shared_basis_2.weight,)
-        for i in range(1, len(net.layer2)):
-            all_basis = all_basis +(net.layer2[i].basis_conv1.weight, net.layer2[i].basis_conv2.weight,)
+                         sim += torch.sum(\
+                                 D[idx_base:idx_base + num_unique_basis, \
+                                 idx_base:idx_base+num_unique_basis])
+                         cnt_sim += num_unique_basis ** 2 
 
-        B = torch.cat(all_basis).view(num_all_basis, -1)
+            else: # orthogonalities only btwn shared basis
+                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+                cnt_sim += num_shared_basis**2
 
-        # compute orthogonalities btwn all baisis  
-        D = torch.mm(B, torch.t(B)) 
-
-        # make diagonal zeros
-        D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
-
-        # orthogonalities btwn shared<->(shared,unique)
-        #sim = sim + torch.sum(D[0:num_shared_basis,:])
-        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-        cnt_sim = cnt_sim + num_shared_basis**2
-        ''' 
-        # orthogonalities btwn unique<->unique in the same layer
-        for i in range(1, len(net.layer2)):
-            for j in range(2):  # conv1 & conv2
-                idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
-                                         idx_base:idx_base+num_unique_basis])
-                cnt_sim = cnt_sim + num_unique_basis ** 2 
-        '''
-        #group 3
-        num_shared_basis = net.shared_basis_3.weight.shape[0]
-        num_unique_basis = net.layer3[1].basis_conv1.weight.shape[0] 
-        num_all_basis = num_shared_basis + (num_unique_basis * 2 * (len(net.layer3) -1))
-        #print("net.layer1 size", len(net.layer1))
-        all_basis =(net.shared_basis_3.weight,)
-        for i in range(1, len(net.layer3)):
-            all_basis = all_basis +(net.layer3[i].basis_conv1.weight, net.layer3[i].basis_conv2.weight,)
-
-        B = torch.cat(all_basis).view(num_all_basis, -1)
-
-        # compute orthogonalities btwn all baisis  
-        D = torch.mm(B, torch.t(B))
-
-        # make diagonal zeros
-        D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
-
-        # orthogonalities btwn shared<->(shared,unique)
-        #sim = sim + torch.sum(D[0:num_shared_basis,:])
-        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-        cnt_sim = cnt_sim + num_shared_basis**2
-        ''' 
-        # orthogonalities btwn unique<->unique in the same layer
-        for i in range(1, len(net.layer3)):
-            for j in range(2):  # conv1 & conv2
-                idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
-                                         idx_base:idx_base+num_unique_basis])
-                cnt_sim = cnt_sim + num_unique_basis ** 2 
-        '''
-        #group 4
-        num_shared_basis = net.shared_basis_4.weight.shape[0]
-        num_unique_basis = net.layer4[1].basis_conv1.weight.shape[0] 
-        num_all_basis = num_shared_basis + (num_unique_basis * 2 * (len(net.layer4) -1))
-        #print("net.layer1 size", len(net.layer1))
-        all_basis =(net.shared_basis_4.weight,)
-        for i in range(1, len(net.layer4)):
-            all_basis = all_basis +(net.layer4[i].basis_conv1.weight, net.layer4[i].basis_conv2.weight,)
-
-        B = torch.cat(all_basis).view(num_all_basis, -1)
-
-        # compute orthogonalities btwn all baisis  
-        D = torch.mm(B, torch.t(B))
-
-        # make diagonal zeros
-        D = torch.abs(D - torch.eye(num_all_basis, num_all_basis, device=device))
-        
-        # orthogonalities btwn shared<->(shared,unique)
-        #sim = sim + torch.sum(D[0:num_shared_basis,:])
-        #cnt_sim = cnt_sim + num_shared_basis*num_all_basis
-        sim = sim + torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-        cnt_sim = cnt_sim + num_shared_basis**2
-        ''' 
-        # orthogonalities btwn unique<->unique in the same layer
-        for i in range(1, len(net.layer4)):
-            for j in range(2):  # conv1 & conv2
-                idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                sim = sim + torch.sum(D[idx_base:idx_base+num_unique_basis, \
-                                         idx_base:idx_base+num_unique_basis])
-                cnt_sim = cnt_sim + num_unique_basis ** 2 
-        '''
- 
         #average similarity
         avg_sim = sim / cnt_sim
 
@@ -583,7 +492,8 @@ def train_basis(epoch):
         loss = loss + lambda2 * avg_sim
         loss.backward()
         optimizer.step()
-    
+
+        
 #Test for models
 def test(epoch):
     if epoch < args.starting_epoch:
