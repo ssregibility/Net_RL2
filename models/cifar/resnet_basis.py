@@ -209,7 +209,7 @@ class ResNet_Basis(nn.Module):
         self.shared_basis_1 = nn.Conv2d(64, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
         nn.init.orthogonal_(self.shared_basis_1.weight)
         self.layer1 = self._make_layer(block, block_without_basis, 64, num_blocks[0], unique_rank, self.shared_basis_1, stride=1)
-        
+        #
         #shared_basis_2 is shared across all residual blocks in layer2
         self.shared_basis_2 = nn.Conv2d(128, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
         nn.init.orthogonal_(self.shared_basis_2.weight)
