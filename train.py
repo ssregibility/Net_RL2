@@ -452,8 +452,8 @@ def train_basis(epoch, include_unique_basis=False):
             D = torch.mm(B, torch.t(B)) 
 
             # make diagonal zeros
-            D = torch.abs(D - \
-                    torch.eye(num_all_basis, num_all_basis, device=device))
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
             #print("D size:", D.shape)
          
             if (include_unique_basis == True):  
