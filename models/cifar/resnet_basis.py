@@ -91,12 +91,6 @@ class BasicBlock_Basis(nn.Module):
                 nn.BatchNorm2d(self.expansion*planes)
             )
             
-        # Orthogonal initialization
-        #nn.init.orthogonal_(self.shared_basis.weight)
-        #all_basis_filters = torch.cat((self.shared_basis.weight, self.basis_conv1.weight, self.basis_conv2.weight))
-        #nn.init.orthogonal_(all_basis_filters)
-        
-
     def forward(self, x): 
         #merge feature maps from shared basis and unique basis into a single feature map by torch.cat()
         #X -> shared/unique basis -> BN -> coeff -> BN -> ReLU -> shared/uniquebasis -> BN -> coeff -> BN + Shortcut -> ReLU = Out 
@@ -207,22 +201,18 @@ class ResNet_Basis(nn.Module):
         #shared_basis_1 is shared across all residual blocks in layer1(=group 1 of residual blocks)
         #As a channel size for a group is multiplied by 2, channel sizes of unique basis and shared basis are multiplied by 2, too.
         self.shared_basis_1 = nn.Conv2d(64, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        #nn.init.orthogonal_(self.shared_basis_1.weight)
         self.layer1 = self._make_layer(block, block_without_basis, 64, num_blocks[0], unique_rank, self.shared_basis_1, stride=1)
-        #
+        
         #shared_basis_2 is shared across all residual blocks in layer2
         self.shared_basis_2 = nn.Conv2d(128, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
-        #nn.init.orthogonal_(self.shared_basis_2.weight)
         self.layer2 = self._make_layer(block, block_without_basis, 128, num_blocks[1], unique_rank*2, self.shared_basis_2, stride=2)
         
         #shared_basis_3 is shared across all residual blocks in layer2
         self.shared_basis_3 = nn.Conv2d(256, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
-        nn.init.orthogonal_(self.shared_basis_3.weight)
         self.layer3 = self._make_layer(block, block_without_basis, 256, num_blocks[2], unique_rank*4, self.shared_basis_3, stride=2)
         
         #shared_basis_4 is shared across all residual blocks in layer2
         self.shared_basis_4 = nn.Conv2d(512, shared_rank*8, kernel_size=3, stride=1, padding=1, bias=False)
-        #nn.init.orthogonal_(self.shared_basis_4.weight)
         self.layer4 = self._make_layer(block, block_without_basis, 512, num_blocks[3], unique_rank*8, self.shared_basis_4, stride=2)
         
         self.linear = nn.Linear(512*block.expansion, num_classes)
