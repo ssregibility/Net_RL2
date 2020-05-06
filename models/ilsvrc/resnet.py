@@ -67,3 +67,7 @@ def ResNet18(c):
 
 def ResNet34(c):
     return ResNet(BasicBlock, [3,4,6,3],c)
+
+#placeholder, don't used this
+def ResNet50(c):
+    return ResNet(BasicBlock, [3,4,6,3],c)
