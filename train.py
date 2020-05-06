@@ -31,8 +31,10 @@ args = parser.parse_args()
 
 if 'CIFAR' in args.dataset:
     from models.cifar import resnet, resnet_basis, resnext, resnext_basis
+    dic_model = {'ResNet50': resnet.ResNet50, 'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext101':resnext.ResNext101_32x8d, 'ResNext50_Basis':resnext_basis.ResNext50_32x4d_Basis}
 if 'ILSVRC' in args.dataset:
     from models.ilsvrc import resnet, resnet_basis
+    dic_model = {'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis}
 
 lr = args.lr
 momentum = args.momentum
@@ -42,7 +44,8 @@ shared_rank = args.shared_rank
 unique_rank = args.unique_rank
     
 dic_dataset = {'ILSVRC2012':1000, 'CIFAR100':100, 'CIFAR10':10}
-dic_model = {'ResNet50': resnet.ResNet50, 'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext101':resnext.ResNext101_32x8d, 'ResNext50_Basis':resnext_basis.ResNext50_32x4d_Basis}
+
+#dic_model = {'ResNet50': resnet.ResNet50, 'ResNet34':resnet.ResNet34,'ResNet18':resnet.ResNet18,'ResNet34_Basis':resnet_basis.ResNet34_Basis, 'ResNet34_Unique':resnet_basis.ResNet34_Unique, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext101':resnext.ResNext101_32x8d, 'ResNext50_Basis':resnext_basis.ResNext50_32x4d_Basis}
 
 if args.dataset not in dic_dataset:
     print("The dataset is currently not supported")
