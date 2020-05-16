@@ -109,8 +109,3 @@ def get_testdata(dataset, root, train=False, download=False, shuffle=False, batc
         testloader = None
         
     return testloader
-
-#Placeholder
-def get_valdata():
-    
-    return
