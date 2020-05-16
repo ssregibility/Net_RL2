@@ -27,14 +27,8 @@ author, Yerlan Idelbayev.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.nn.init as init
 
 from torch.autograd import Variable
-
-def _weights_init(m):
-    classname = m.__class__.__name__
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
-        init.kaiming_normal_(m.weight)
 
 class LambdaLayer(nn.Module):
     def __init__(self, lambd):
@@ -69,12 +63,17 @@ class BasicBlock(nn.Module):
                 )
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
 
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        out += self.shortcut(x)
+        out = self.relu(out)
+        
+        return out
 
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
@@ -83,71 +82,69 @@ class ResNet(nn.Module):
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
+        self.relu = nn.ReLU(inplace=True)
         
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         
-        self.linear = nn.Linear(64, num_classes)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(64, num_classes)
 
-        self.apply(_weights_init)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+                
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        for m in self.modules():
+            if isinstance(m, Bottleneck):
+                nn.init.constant_(m.bn3.weight, 0)
+            elif isinstance(m, BasicBlock):
+                nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, num_blocks, stride):
-        strides = [stride] + [1]*(num_blocks-1)
+    def _make_layer(self, block, planes, blocks, stride=1):
         layers = []
-        for stride in strides:
-            layers.append(block(self.in_planes, planes, stride))
-            self.in_planes = planes * block.expansion
+        layers.append(block(self.inplanes, planes, stride))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
 
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = F.avg_pool2d(out, out.size()[3])
-        out = out.view(out.size(0), -1)
-        out = self.linear(out)
-        return out
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
 
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
 
-def resnet20():
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+     
+        return x
+
+def ResNet20():
     return ResNet(BasicBlock, [3, 3, 3])
 
-
-def resnet32():
+def ResNet32():
     return ResNet(BasicBlock, [5, 5, 5])
 
-
-def resnet44():
+def ResNet44():
     return ResNet(BasicBlock, [7, 7, 7])
 
-
-def resnet56():
+def ResNet56():
     return ResNet(BasicBlock, [9, 9, 9])
 
-
-def resnet110():
+def ResNet110():
     return ResNet(BasicBlock, [18, 18, 18])
 
-
-def resnet1202():
+def ResNet1202():
     return ResNet(BasicBlock, [200, 200, 200])
-
-
-def test(net):
-    import numpy as np
-    total_params = 0
-
-    for x in filter(lambda p: p.requires_grad, net.parameters()):
-        total_params += np.prod(x.data.numpy().shape)
-    print("Total number of params", total_params)
-    print("Total layers", len(list(filter(lambda p: p.requires_grad and len(p.data.size())>1, net.parameters()))))
-
-if __name__ == "__main__":
-    for net_name in __all__:
-        if net_name.startswith('resnet'):
-            print(net_name)
-            test(globals()[net_name]())
-            print()

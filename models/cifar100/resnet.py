@@ -2,7 +2,6 @@
 
 import torch
 import torch.nn as nn
-from .utils import load_state_dict_from_url
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -31,7 +30,7 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        out += self.shortcut(identity)
+        out += self.shortcut(x)
         out = self.relu(out)
 
         return out
