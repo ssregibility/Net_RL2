@@ -22,7 +22,7 @@ If you use this implementation in you work, please don't forget to mention the
 author, Yerlan Idelbayev.
 '''
 
-#https://github.com/bearpaw/pytorch-classification
+#imported from https://github.com/bearpaw/pytorch-classification
 
 import torch
 import torch.nn as nn
