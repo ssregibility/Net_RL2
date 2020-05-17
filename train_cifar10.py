@@ -17,19 +17,20 @@ parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambda', default=0.5, type=float, help='lambda (for basis loss)')
+parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
 parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
-parser.add_argument('--model', default="ResNet34", help='ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet34_Unique, ResNext50, ResNext101')
+parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
 parser.add_argument('--dataset_path', default="./data", help='dataset path')
+
 args = parser.parse_args()
 
-from models.cifar import resnet, resnet_basis
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202}
+from models.cifar10 import resnet
+dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -44,11 +45,13 @@ device='cuda'
 #args.visible_device sets which cuda devices to be used"
 
 if 'Basis' in args.model:
-    net = dic_model[args.model](dic_dataset[args.dataset], args.shared_rank, args.unique_rank)
+    net = dic_model[args.model](args.shared_rank, args.unique_rank)
 else:
-    net = dic_model[args.model](dic_dataset[args.dataset])
+    net = dic_model[args.model]()
     
 net = net.to(device)
+
+print(net)
 
 if args.pretrained != None:
     checkpoint = torch.load(args.pretrained)
@@ -74,8 +77,11 @@ def train(epoch):
         outputs = net(inputs)
                         
         loss = criterion(outputs, targets)
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
         loss.backward()
         optimizer.step()
+        
 
 # Training for parameter shraed models
 # Use the property of orthogonal matrices;
@@ -96,7 +102,7 @@ def train_basis(epoch, include_unique_basis=False):
         # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
-        for gid in range(1, 5):  # ResNet has 4 groups
+        for gid in range(1, 4):  # ResNet has 4 groups
             layer = getattr(net, "layer"+str(gid))
             shared_basis = getattr(net,"shared_basis_"+str(gid))
 
@@ -153,9 +159,9 @@ def train_basis(epoch, include_unique_basis=False):
             #print("similarity loss: %.6f" % (-torch.log(1.0-avg_sim)))
             print("similarity loss: %.6f" % avg_sim)
 
-        #apply similarity loss, multiplied by args.lambda
-        #loss = loss - args.lambda * torch.log(1.0 - avg_sim)
-        loss = loss + args.lambda * avg_sim
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss - args.lambdaR * torch.log(1.0 - avg_sim)
+        #loss = loss + avg_sim * args.lambdaR
         loss.backward()
         optimizer.step()
         
@@ -197,7 +203,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + args.model + "S" + str(args.shared_rank) + "U" + str(args.unique_rank) + "L" + str(args.lambda) + "-" + args.visible_device + '.pth')
+        torch.save(state, './checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
@@ -211,36 +217,35 @@ if 'Basis' in args.model:
     func_train = train_basis
 
 #For parameter shared models
-if 'Basis' in args.model:
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
-    for i in range(150):
-        func_train(i+1)
-        test(i+1)
-    
-    #============
-    
-    checkpoint = torch.load('./checkpoint/' + args.model + "S" + str(args.shared_rank) + "U" + str(args.unique_rank) + "L" + str(args.lambda) + "-" + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
-    optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
-    for i in range(75):
-        func_train(i+151)
-        test(i+151)
+for i in range(150):
+    func_train(i+1)
+    test(i+1)
     
     #============
     
-    checkpoint = torch.load('./checkpoint/' + args.model + "S" + str(args.shared_rank) + "U" + str(args.unique_rank) + "L" + str(args.lambda) + "-" + args.visible_device + '.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
+checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
+net.load_state_dict(checkpoint['net'])
+best_acc = checkpoint['acc']
+start_epoch = checkpoint['epoch']
 
-    optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
-    for i in range(75):
+optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
+for i in range(75):
+    func_train(i+151)
+    test(i+151)
+    
+    #============
+    
+checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
+net.load_state_dict(checkpoint['net'])
+best_acc = checkpoint['acc']
+start_epoch = checkpoint['epoch']
+
+optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
+for i in range(75):
         func_train(i+226)
         test(i+226)
 
-    print("Best_Acc_top1 = %.3f" % best_acc)
-    print("Best_Acc_top5 = %.3f" % best_acc_top5)
+print("Best_Acc_top1 = %.3f" % best_acc)
+print("Best_Acc_top5 = %.3f" % best_acc_top5)

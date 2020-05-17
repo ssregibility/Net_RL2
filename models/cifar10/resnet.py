@@ -88,7 +88,7 @@ class BasicBlock_Basis(nn.Module):
         out = self.bn2(out)
         out = self.relu(out)
 
-        out += self.shortcut(x)
+        out = out + self.shortcut(x)
         out = self.relu(out)
         
         return out
@@ -134,17 +134,22 @@ class BasicBlock(nn.Module):
         return out
     
 class ResNet_Basis(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
-        super(ResNet, self).__init__()
+    def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
+        super(ResNet_Basis, self).__init__()
         self.in_planes = 16
         self.relu = nn.ReLU(inplace=True)
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         
-        self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
-        self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
-        self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
+        self.shared_basis_1 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1, stride=1)
+        
+        self.shared_basis_2 = nn.Conv2d(32, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_2, stride=2)
+        
+        self.shared_basis_3 = nn.Conv2d(64, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_3, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
@@ -160,17 +165,17 @@ class ResNet_Basis(nn.Module):
         # so that the residual branch starts with zeros, and each residual block behaves like an identity.
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
         for m in self.modules():
-            if isinstance(m, Bottleneck):
-                nn.init.constant_(m.bn3.weight, 0)
-            elif isinstance(m, BasicBlock):
+            #if isinstance(m, Bottleneck):
+            #    nn.init.constant_(m.bn3.weight, 0)
+            if isinstance(m, BasicBlock):
                 nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis, stride=1):
         layers = []
-        layers.append(block(self.inplanes, planes, stride))
-        self.inplanes = planes * block.expansion
+        layers.append(block_original(self.in_planes, planes, stride))
+        self.in_planes = planes * block_original.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis))
 
         return nn.Sequential(*layers)
 
@@ -198,9 +203,9 @@ class ResNet(nn.Module):
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         
-        self.layer1 = self._make_layer(block, 16, num_blocks[0], unique_rank, shared_basis, stride=1)
-        self.layer2 = self._make_layer(block, 32, num_blocks[1], unique_rank*2, shared_basis, stride=2)
-        self.layer3 = self._make_layer(block, 64, num_blocks[2], unique_rank*4, shared_basis, stride=2)
+        self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
@@ -216,17 +221,17 @@ class ResNet(nn.Module):
         # so that the residual branch starts with zeros, and each residual block behaves like an identity.
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
         for m in self.modules():
-            if isinstance(m, Bottleneck):
-                nn.init.constant_(m.bn3.weight, 0)
-            elif isinstance(m, BasicBlock):
+            #if isinstance(m, Bottleneck):
+            #    nn.init.constant_(m.bn3.weight, 0)
+            if isinstance(m, BasicBlock):
                 nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis, stride=1):
+    def _make_layer(self, block, planes, blocks, stride=1):
         layers = []
-        layers.append(block_original(self.inplanes, planes, stride))
-        self.inplanes = planes * block.expansion
+        layers.append(block(self.in_planes, planes, stride))
+        self.in_planes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block_basis(self.inplanes, planes, unique_rank, shared_basis))
+            layers.append(block(self.in_planes, planes))
 
         return nn.Sequential(*layers)
 
@@ -262,3 +267,6 @@ def ResNet110():
 
 def ResNet1202():
     return ResNet(BasicBlock, [200, 200, 200])
+
+def ResNet56_Basis(shared_rank, unique_rank):
+    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
