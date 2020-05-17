@@ -56,7 +56,6 @@ def get_traindata(dataset, root, download=False, shuffle=True, batch_size=128, n
 def get_testdata(dataset, root, download=False, shuffle=False, batch_size=128, num_workers=8):
     
     if dataset=='CIFAR10':
-        mean, std = dataset_meanstd(dataset, root, train=train, download=download)
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -65,7 +64,6 @@ def get_testdata(dataset, root, download=False, shuffle=False, batch_size=128, n
         testloader = torch.utils.data.DataLoader(data,batch_size=batch_size,shuffle=shuffle,num_workers=num_workers,pin_memory=True)
     
     elif dataset=='CIFAR100':
-        mean, std = dataset_meanstd(dataset, root, train=False, download=download)
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.507, 0.487, 0.441], std=[0.267, 0.256, 0.276])
