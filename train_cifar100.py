@@ -30,7 +30,7 @@ parser.add_argument('--dataset_path', default="./data/", help='dataset path')
 args = parser.parse_args()
 
 from models.cifar100 import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34}
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
