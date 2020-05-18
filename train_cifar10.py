@@ -207,6 +207,17 @@ def test(epoch):
         print("Best_Acc_top1 = %.3f" % acc_top1)
         print("Best_Acc_top5 = %.3f" % acc_top5)
         
+def adjust_learning_rate(optimizer, epoch, args_lr):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = args_lr
+    if epoch > 100:
+        lr = lr * 0.1
+    if epoch > 150:
+        lr = lr * 0.1
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+        
 best_acc = 0
 best_acc_top5 = 0
 
@@ -216,10 +227,12 @@ if 'Basis' in args.model:
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
-for i in range(150):
+for i in range(200):
+    adjust_learning_rate(optimizer, i, args.lr)
     func_train(i+1)
     test(i+1)
     
+"""
     #============
     
 checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
@@ -243,6 +256,7 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum,
 for i in range(75):
         func_train(i+226)
         test(i+226)
+"""
 
 print("Best_Acc_top1 = %.3f" % best_acc)
 print("Best_Acc_top5 = %.3f" % best_acc_top5)
