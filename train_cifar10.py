@@ -100,7 +100,7 @@ def train_basis(epoch, include_unique_basis=False):
         # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
-        for gid in range(1, 4):  # ResNet has 4 groups
+        for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
             layer = getattr(net, "layer"+str(gid))
             shared_basis = getattr(net,"shared_basis_"+str(gid))
 
