@@ -214,7 +214,6 @@ func_train = train
 if 'Basis' in args.model:
     func_train = train_basis
 
-#For parameter shared models
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
 for i in range(150):
