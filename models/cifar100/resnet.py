@@ -30,18 +30,10 @@ import torch.nn.functional as F
 
 from torch.autograd import Variable
 
-class LambdaLayer(nn.Module):
-    def __init__(self, lambd):
-        super(LambdaLayer, self).__init__()
-        self.lambd = lambd
-
-    def forward(self, x):
-        return self.lambd(x)
-
 class BasicBlock_Basis(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1, option='A'):
+    def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         super(BasicBlock_Basis, self).__init__()
         
         self.unique_rank = unique_rank
@@ -65,17 +57,10 @@ class BasicBlock_Basis(nn.Module):
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != planes:
-            if option == 'A':
-                """
-                For CIFAR10 ResNet paper uses option A.
-                """
-                self.shortcut = LambdaLayer(lambda x:
-                                            F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
-            elif option == 'B':
-                self.shortcut = nn.Sequential(
-                     nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
-                     nn.BatchNorm2d(self.expansion * planes)
-                )
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes)
+            )
 
     def forward(self, x):
         
@@ -93,17 +78,13 @@ class BasicBlock_Basis(nn.Module):
         out = self.relu(out)
 
         self.shared_basis_1.stride = (1,1)
-        #do we need second shared basis?
-        
-        #print(out.size())
+
         out = torch.cat((self.basis_conv2(out), self.shared_basis_2(out)),dim=1)
-        #print(out.size())
         
         out = self.basis_bn2(out)
         out = self.coeff_conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
-        #print()
 
         out = out + self.shortcut(x)
         out = self.relu(out)
@@ -113,7 +94,7 @@ class BasicBlock_Basis(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, option='A'):
+    def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
         
         self.relu = nn.ReLU(inplace=True)
@@ -125,17 +106,10 @@ class BasicBlock(nn.Module):
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != planes:
-            if option == 'A':
-                """
-                For CIFAR10 ResNet paper uses option A.
-                """
-                self.shortcut = LambdaLayer(lambda x:
-                                            F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
-            elif option == 'B':
-                self.shortcut = nn.Sequential(
-                     nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
-                     nn.BatchNorm2d(self.expansion * planes)
-                )
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes)
+            )
 
     def forward(self, x):
         out = self.conv1(x)
@@ -151,22 +125,25 @@ class BasicBlock(nn.Module):
         return out
     
 class ResNet_Basis(nn.Module):
-    def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
+    def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=100):
         super(ResNet_Basis, self).__init__()
-        self.in_planes = 16
+        self.in_planes = 64
         self.relu = nn.ReLU(inplace=True)
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(16)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
         
-        self.shared_basis_1 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_1 = nn.Conv2d(64, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
         self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1, self.shared_basis_1, stride=1)
         
-        self.shared_basis_2 = nn.Conv2d(32, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_2 = nn.Conv2d(128, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
         self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_1, self.shared_basis_2, stride=2)
         
-        self.shared_basis_3 = nn.Conv2d(64, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_3 = nn.Conv2d(256, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
         self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_2, self.shared_basis_3, stride=2)
+        
+        self.shared_basis_4 = nn.Conv2d(512, shared_rank*8, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*8, self.shared_basis_3, self.shared_basis_4, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
@@ -205,6 +182,7 @@ class ResNet_Basis(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
+        x = self.layer4(x)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -213,20 +191,21 @@ class ResNet_Basis(nn.Module):
         return x
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, block, num_blocks, num_classes=100):
         super(ResNet, self).__init__()
-        self.in_planes = 16
+        self.in_planes = 64
         self.relu = nn.ReLU(inplace=True)
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(16)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
         
-        self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
-        self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
-        self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
+        self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, num_blocks[2], stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64, num_classes)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -261,30 +240,16 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-
+        x = self.layer4(x)
+        
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
      
         return x
 
-def ResNet20():
-    return ResNet(BasicBlock, [3, 3, 3])
+def ResNet18():
+    return ResNet(BasicBlock, [2, 2, 2, 2])
 
-def ResNet32():
-    return ResNet(BasicBlock, [5, 5, 5])
-
-def ResNet44():
-    return ResNet(BasicBlock, [7, 7, 7])
-
-def ResNet56():
-    return ResNet(BasicBlock, [9, 9, 9])
-
-def ResNet110():
-    return ResNet(BasicBlock, [18, 18, 18])
-
-def ResNet1202():
-    return ResNet(BasicBlock, [200, 200, 200])
-
-def ResNet56_Basis(shared_rank, unique_rank):
-    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
+def ResNet34():
+    return ResNet(BasicBlock, [3, 4, 6, 3])
