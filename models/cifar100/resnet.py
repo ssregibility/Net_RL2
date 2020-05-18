@@ -143,7 +143,7 @@ class ResNet_Basis(nn.Module):
         self.layer3 = self._make_layer(block_basis, block_original, 256, num_blocks[2], unique_rank*4, self.shared_basis_2, self.shared_basis_3, stride=2)
         
         self.shared_basis_4 = nn.Conv2d(512, shared_rank*8, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer3 = self._make_layer(block_basis, block_original, 512, num_blocks[3], unique_rank*8, self.shared_basis_3, self.shared_basis_4, stride=2)
+        self.layer4 = self._make_layer(block_basis, block_original, 512, num_blocks[3], unique_rank*8, self.shared_basis_3, self.shared_basis_4, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, num_classes)
@@ -182,7 +182,6 @@ class ResNet_Basis(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        print("!")
         x = self.layer4(x)
 
         x = self.avgpool(x)
