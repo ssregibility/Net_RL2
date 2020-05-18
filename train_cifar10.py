@@ -25,7 +25,7 @@ parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES'
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
 parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
-parser.add_argument('--dataset_path', default="./data", help='dataset path')
+parser.add_argument('--dataset_path', default="./data/", help='dataset path')
 
 args = parser.parse_args()
 
@@ -50,8 +50,6 @@ else:
     net = dic_model[args.model]()
     
 net = net.to(device)
-
-print(net)
 
 if args.pretrained != None:
     checkpoint = torch.load(args.pretrained)
@@ -160,8 +158,8 @@ def train_basis(epoch, include_unique_basis=False):
             print("similarity loss: %.6f" % avg_sim)
 
         #apply similarity loss, multiplied by args.lambdaR
-        loss = loss - args.lambdaR * torch.log(1.0 - avg_sim)
-        #loss = loss + avg_sim * args.lambdaR
+        #loss = loss - args.lambdaR * torch.log(1.0 - avg_sim)
+        loss = loss + avg_sim * args.lambdaR
         loss.backward()
         optimizer.step()
         

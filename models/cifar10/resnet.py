@@ -41,23 +41,26 @@ class LambdaLayer(nn.Module):
 class BasicBlock_Basis(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1, option='A'):
+    def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1, option='A'):
         super(BasicBlock_Basis, self).__init__()
         
         self.unique_rank = unique_rank
-        self.shared_basis = shared_basis
+        self.shared_basis_1 = shared_basis_1
+        self.shared_basis_2 = shared_basis_2
         self.relu = nn.ReLU(inplace=True)
+        self.stride = stride
         
-        self.total_rank = unique_rank+shared_basis.weight.shape[0]
+        self.total_rank_1 = unique_rank+shared_basis_1.weight.shape[0]
+        self.total_rank_2 = unique_rank+shared_basis_2.weight.shape[0]
         
         self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn1 = nn.BatchNorm2d(self.total_rank)
-        self.coeff_conv1 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(self.total_rank_1)
+        self.coeff_conv1 = nn.Conv2d(self.total_rank_1, planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         
-        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
-        self.coeff_conv2 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=stride, padding=0, bias=False)
+        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(self.total_rank_2)
+        self.coeff_conv2 = nn.Conv2d(self.total_rank_2, planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -75,18 +78,32 @@ class BasicBlock_Basis(nn.Module):
                 )
 
     def forward(self, x):
-        out = torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1)
+        
+        if self.stride != 1:
+            self.shared_basis_1.stride = (2,2)
+        else:
+            self.shared_basis_1.stride = (1,1)
+                    
+        out = torch.cat((self.basis_conv1(x), self.shared_basis_1(x)),dim=1)
+
         out = self.basis_bn1(out)
         out = self.coeff_conv1(out)
+        
         out = self.bn1(out)
         out = self.relu(out)
 
+        self.shared_basis_1.stride = (1,1)
         #do we need second shared basis?
-        out = torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1)
+        
+        #print(out.size())
+        out = torch.cat((self.basis_conv2(out), self.shared_basis_2(out)),dim=1)
+        #print(out.size())
+        
         out = self.basis_bn2(out)
         out = self.coeff_conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
+        #print()
 
         out = out + self.shortcut(x)
         out = self.relu(out)
@@ -143,13 +160,13 @@ class ResNet_Basis(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         
         self.shared_basis_1 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1, stride=1)
+        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1, self.shared_basis_1, stride=1)
         
-        self.shared_basis_2 = nn.Conv2d(32, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_2, stride=2)
+        self.shared_basis_2 = nn.Conv2d(32, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_1, self.shared_basis_2, stride=2)
         
-        self.shared_basis_3 = nn.Conv2d(64, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_3, stride=2)
+        self.shared_basis_3 = nn.Conv2d(64, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_2, self.shared_basis_3, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
@@ -170,12 +187,13 @@ class ResNet_Basis(nn.Module):
             if isinstance(m, BasicBlock):
                 nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis, stride=1):
+    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         layers = []
-        layers.append(block_original(self.in_planes, planes, stride))
+        #layers.append(block_original(self.in_planes, planes, stride))
+        layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=stride))
         self.in_planes = planes * block_original.expansion
         for _ in range(1, blocks):
-            layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis))
+            layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_2, shared_basis_2))
 
         return nn.Sequential(*layers)
 
