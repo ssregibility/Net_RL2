@@ -163,8 +163,8 @@ class ResNet_Basis(nn.Module):
 
     def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         layers = []
-        #layers.append(block_original(self.in_planes, planes, stride))
-        layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=stride))
+        layers.append(block_original(self.in_planes, planes, stride))
+        #layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=stride))
         self.in_planes = planes * block_original.expansion
         for _ in range(1, blocks):
             layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_2, shared_basis_2))
