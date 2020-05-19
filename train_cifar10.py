@@ -16,10 +16,10 @@ import utils
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
+parser.add_argument('--weight_decay', default=1e-4, type=float, help='weight decay')
 parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
-parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
+parser.add_argument('--batch_size', default=128, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
@@ -91,18 +91,77 @@ def train_basis(epoch, include_unique_basis=False):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
         optimizer.zero_grad()
         outputs = net(inputs)
+        
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
 
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
         # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
             layer = getattr(net, "layer"+str(gid))
-            shared_basis = getattr(net,"shared_basis_"+str(gid))
+            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_1")
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight,)
+            if (include_unique_basis == True):  
+                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
+                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
+                for i in range(1, len(layer)):
+                    all_basis += (layer[i].basis_conv1.weight, \
+                            layer[i].basis_conv2.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            #print("D size:", D.shape)
+         
+            if (include_unique_basis == True):  
+                # orthogonalities btwn shared<->(shared/unique)
+                sim += torch.sum(D[0:num_shared_basis,:])  
+                cnt_sim += num_shared_basis*num_all_basis
+
+                # orthogonalities btwn unique<->unique in the same layer
+                for i in range(1, len(layer)):
+                    for j in range(2):  # conv1 & conv2
+                         idx_base = num_shared_basis   \
+                          + (i-1) * (num_unique_basis) * 2 \
+                          + num_unique_basis * j 
+                         sim += torch.sum(\
+                                 D[idx_base:idx_base + num_unique_basis, \
+                                 idx_base:idx_base+num_unique_basis])
+                         cnt_sim += num_unique_basis ** 2 
+
+            else: # orthogonalities only btwn shared basis
+                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+                cnt_sim += num_shared_basis**2
+                
+        for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
+            layer = getattr(net, "layer"+str(gid))
+            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_2")
 
             num_shared_basis = shared_basis.weight.shape[0]
             num_all_basis = num_shared_basis 
@@ -163,6 +222,12 @@ def train_basis(epoch, include_unique_basis=False):
         loss.backward()
         optimizer.step()
         
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+    
 #Test for models
 def test(epoch):
     if epoch < args.starting_epoch:
@@ -227,12 +292,11 @@ if 'Basis' in args.model:
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
-for i in range(200):
-    adjust_learning_rate(optimizer, i, args.lr)
+for i in range(150):
+    #adjust_learning_rate(optimizer, i, args.lr)
     func_train(i+1)
     test(i+1)
     
-"""
     #============
     
 checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
@@ -241,6 +305,7 @@ best_acc = checkpoint['acc']
 start_epoch = checkpoint['epoch']
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
+
 for i in range(75):
     func_train(i+151)
     test(i+151)
@@ -253,10 +318,10 @@ best_acc = checkpoint['acc']
 start_epoch = checkpoint['epoch']
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
+
 for i in range(75):
         func_train(i+226)
         test(i+226)
-"""
 
 print("Best_Acc_top1 = %.3f" % best_acc)
 print("Best_Acc_top5 = %.3f" % best_acc_top5)
