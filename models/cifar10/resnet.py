@@ -53,31 +53,29 @@ class BasicBlock_Basis(nn.Module):
 
     def forward(self, x):
         
+        """
         if self.stride != 1:
             self.shared_basis_1.stride = (2,2)
         else:
             self.shared_basis_1.stride = (1,1)
+        """
                     
         out = torch.cat((self.basis_conv1(x), self.shared_basis_1(x)),dim=1)
-
         out = self.basis_bn1(out)
         out = self.coeff_conv1(out)
         
         out = self.bn1(out)
         out = self.relu(out)
 
-        self.shared_basis_1.stride = (1,1)
-        #do we need second shared basis?
-        
-        #print(out.size())
+        """
+        if self.stride != 1:
+            self.shared_basis_1.stride = (1,1)
+        """
         out = torch.cat((self.basis_conv2(out), self.shared_basis_2(out)),dim=1)
-        #print(out.size())
-        
         out = self.basis_bn2(out)
         out = self.coeff_conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
-        #print()
 
         out = out + self.shortcut(x)
         out = self.relu(out)
@@ -133,41 +131,62 @@ class ResNet_Basis(nn.Module):
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         
-        self.shared_basis_1 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1, self.shared_basis_1, stride=1)
+        self.shared_basis_1_1 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_1_2 = nn.Conv2d(16, shared_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank, self.shared_basis_1_1, self.shared_basis_1_2, stride=1)
         
-        self.shared_basis_2 = nn.Conv2d(32, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_1, self.shared_basis_2, stride=2)
+        self.shared_basis_2_1 = nn.Conv2d(32, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_2_2 = nn.Conv2d(32, shared_rank*2, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, self.shared_basis_2_1, self.shared_basis_2_2, stride=2)
         
-        self.shared_basis_3 = nn.Conv2d(64, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
-        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_2, self.shared_basis_3, stride=2)
+        self.shared_basis_3_1 = nn.Conv2d(64, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
+        self.shared_basis_3_2 = nn.Conv2d(64, shared_rank*4, kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, self.shared_basis_3_1, self.shared_basis_3_2, stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
+                #initialize every con2d first, then initialize shared basis again later
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
                 
+        #shared basis layers are initialized again
+        torch.nn.init.orthogonal_(self.shared_basis_1_1.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_1_2.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_2_1.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_2_2.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_3_1.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_3_2.weight)
+        
         # Zero-initialize the last BN in each residual branch,
         # so that the residual branch starts with zeros, and each residual block behaves like an identity.
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
         for m in self.modules():
-            #if isinstance(m, Bottleneck):
-            #    nn.init.constant_(m.bn3.weight, 0)
+            if isinstance(m, BasicBlock_Basis):
+                nn.init.constant_(m.bn2.weight, 0)
             if isinstance(m, BasicBlock):
                 nn.init.constant_(m.bn2.weight, 0)
 
     def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         layers = []
+        
+        """
+        for first block...
+        block_original -> no basis sharing for first block
+        block_basis -> basis sharing for first bloock
+        TOOD: make an option for basis shared first block?
+        """
         layers.append(block_original(self.in_planes, planes, stride))
         #layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=stride))
+        
         self.in_planes = planes * block_original.expansion
         for _ in range(1, blocks):
-            layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_2, shared_basis_2))
+            layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_1, shared_basis_2))
+            #layers.append(block_basis(self.in_planes, planes, unique_rank, shared_basis_2, shared_basis_2))
 
         return nn.Sequential(*layers)
 
