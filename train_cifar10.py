@@ -16,10 +16,10 @@ import utils
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=1e-4, type=float, help='weight decay')
+parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
 parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
-parser.add_argument('--batch_size', default=128, type=int, help='batch_size')
+parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
 parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
@@ -249,6 +249,18 @@ def adjust_learning_rate(optimizer, epoch, args_lr):
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+def adjust_learning_rate_long(optimizer, epoch, args_lr):
+    # cifar10 requires particularlly long training epoches.
+    lr = args_lr
+    if epoch > 250:
+        lr = lr * 0.1
+    if epoch > 375: 
+        lr = lr * 0.1
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
         
 best_acc = 0
 best_acc_top5 = 0
@@ -259,8 +271,8 @@ if 'Basis' in args.model:
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
-for i in range(300):
-    adjust_learning_rate(optimizer, i, args.lr)
+for i in range(500):
+    adjust_learning_rate_long(optimizer, i, args.lr)
     func_train(i+1)
     test(i+1)
 """
