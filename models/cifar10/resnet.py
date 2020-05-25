@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 from torch.autograd import Variable
 
+import copy
+
 class LambdaLayer(nn.Module):
     def __init__(self, lambd):
         super(LambdaLayer, self).__init__()
@@ -145,13 +147,27 @@ class ResNet_Basis(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
                 
-        #shared basis layers are initialized again
+        # Two shared bases are orthogonal-initialized together. 
+        for i in range(1,len(num_blocks)+1):
+            basis_1 = getattr(self, "shared_basis_"+str(i)+"_1")
+            basis_2 = getattr(self, "shared_basis_"+str(i)+"_2")
+            out_chan = basis_1.weight.shape[0]
+            in_chan =  basis_1.weight.shape[1]
+            X = torch.empty(out_chan*2, in_chan, 3, 3)
+            torch.nn.init.orthogonal_(X)
+            basis_1.weight.data = copy.deepcopy(X[:out_chan,:])
+            basis_2.weight.data = copy.deepcopy(X[out_chan:,:])
+
+        # Each share basis is orthogonal-initialized separately
+        # @@ obsolote woochul@2020.05.25
+        '''
         torch.nn.init.orthogonal_(self.shared_basis_1_1.weight)
         torch.nn.init.orthogonal_(self.shared_basis_1_2.weight)
         torch.nn.init.orthogonal_(self.shared_basis_2_1.weight)
         torch.nn.init.orthogonal_(self.shared_basis_2_2.weight)
         torch.nn.init.orthogonal_(self.shared_basis_3_1.weight)
         torch.nn.init.orthogonal_(self.shared_basis_3_2.weight)
+        '''
 
     def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         layers = []
