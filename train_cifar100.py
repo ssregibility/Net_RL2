@@ -11,6 +11,7 @@ import os
 import argparse
 
 import utils
+import timeit
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='TODO')
@@ -68,11 +69,24 @@ def train(epoch):
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
         optimizer.zero_grad()
         outputs = net(inputs)
+        
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
                         
         loss = criterion(outputs, targets)
         if (batch_idx == 0):
@@ -80,16 +94,25 @@ def train(epoch):
         loss.backward()
         optimizer.step()
         
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
 
 # Training for parameter shraed models
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch, include_unique_basis=False):
+def train_basis(epoch, include_unique_basis=True):
     if epoch < args.starting_epoch:
         return
     
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
     
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
@@ -97,6 +120,15 @@ def train_basis(epoch, include_unique_basis=False):
         optimizer.zero_grad()
         outputs = net(inputs)
 
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
         # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
@@ -112,8 +144,7 @@ def train_basis(epoch, include_unique_basis=False):
                 num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
                 num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
                 for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight, \
-                            layer[i].basis_conv2.weight,)
+                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
 
             B = torch.cat(all_basis).view(num_all_basis, -1)
             #print("B size:", B.shape)
@@ -141,7 +172,6 @@ def train_basis(epoch, include_unique_basis=False):
                                  D[idx_base:idx_base + num_unique_basis, \
                                  idx_base:idx_base+num_unique_basis])
                          cnt_sim += num_unique_basis ** 2 
-
             else: # orthogonalities only btwn shared basis
                 sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
                 cnt_sim += num_shared_basis**2
@@ -154,14 +184,18 @@ def train_basis(epoch, include_unique_basis=False):
 
         if (batch_idx == 0):
             print("accuracy_loss: %.6f" % loss)
-            #print("similarity loss: %.6f" % (-torch.log(1.0-avg_sim)))
             print("similarity loss: %.6f" % avg_sim)
 
         #apply similarity loss, multiplied by args.lambdaR
-        #loss = loss - args.lambdaR * torch.log(1.0 - avg_sim)
         loss = loss + avg_sim * args.lambdaR
         loss.backward()
         optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
         
 #Test for models
 def test(epoch):
@@ -193,19 +227,30 @@ def test(epoch):
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
     if acc_top1 > best_acc:
-        print('Saving..')
+        #print('Saving..')
         state = {
-            'net': net.state_dict(),
+            'net_state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
             'acc': acc_top1,
             'epoch': epoch,
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
+        torch.save(state, './checkpoint/' + 'CIFAR100-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
         print("Best_Acc_top5 = %.3f" % acc_top5)
+        
+def adjust_learning_rate(optimizer, epoch, args_lr):
+    lr = args_lr
+    if epoch > 150:
+        lr = lr * 0.1
+    if epoch > 225:
+        lr = lr * 0.1
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
         
 best_acc = 0
 best_acc_top5 = 0
@@ -215,11 +260,24 @@ if 'Basis' in args.model:
     func_train = train_basis
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
+for i in range(300):
+    start = timeit.default_timer()
     
-for i in range(150):
+    adjust_learning_rate(optimizer, i, args.lr)
     func_train(i+1)
     test(i+1)
     
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)  
+
+print("Best_Acc_top1 = %.3f" % best_acc)
+print("Best_Acc_top5 = %.3f" % best_acc_top5)
+"""
+for i in range(150):
+    func_train(i+1)
+    test(i+1)
+
     #============
     
 checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
@@ -246,3 +304,4 @@ for i in range(75):
 
 print("Best_Acc_top1 = %.3f" % best_acc)
 print("Best_Acc_top5 = %.3f" % best_acc_top5)
+"""

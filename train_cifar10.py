@@ -11,6 +11,7 @@ import os
 import argparse
 
 import utils
+import timeit
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='TODO')
@@ -128,6 +129,7 @@ def train_basis(epoch, include_unique_basis=True):
         correct_top1 += correct[:, :1].sum()        
         total += targets.size(0)
         
+        # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
@@ -160,6 +162,7 @@ def train_basis(epoch, include_unique_basis=True):
                 # orthogonalities btwn shared<->(shared/unique)
                 sim += torch.sum(D[0:num_shared_basis,:])  
                 cnt_sim += num_shared_basis*num_all_basis
+                
                 # orthogonalities btwn unique<->unique in the same layer
                 for i in range(1, len(layer)):
                     for j in range(2):  # conv1 & conv2
@@ -225,22 +228,22 @@ def test(epoch):
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
     if acc_top1 > best_acc:
-        print('Saving..')
+        #print('Saving..')
         state = {
-            'net': net.state_dict(),
+            'net_state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
             'acc': acc_top1,
             'epoch': epoch,
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
+        torch.save(state, './checkpoint/' + 'CIFAR10-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
         print("Best_Acc_top5 = %.3f" % acc_top5)
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     lr = args_lr
     if epoch > 150:
         lr = lr * 0.1
@@ -261,7 +264,6 @@ def adjust_learning_rate_long(optimizer, epoch, args_lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-        
 best_acc = 0
 best_acc_top5 = 0
 
@@ -272,9 +274,15 @@ if 'Basis' in args.model:
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
 for i in range(500):
+    start = timeit.default_timer()
+    
     adjust_learning_rate_long(optimizer, i, args.lr)
     func_train(i+1)
     test(i+1)
+    
+    stop = timeit.default_timer()
+    print('Time: ', stop - start)  
+    
 """
     #============
     
