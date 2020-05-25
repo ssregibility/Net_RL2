@@ -17,7 +17,7 @@ import timeit
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=1e-4, type=float, help='weight decay')
+parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
 parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
 parser.add_argument('--batch_size', default=128, type=int, help='batch_size')

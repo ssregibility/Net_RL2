@@ -148,7 +148,7 @@ class BasicBlock(nn.Module):
         return out
     
 class ResNet_Basis(nn.Module):
-    def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=100):
+    def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
         super(ResNet_Basis, self).__init__()
         self.in_planes = 64
         self.relu = nn.ReLU(inplace=True)
