@@ -237,7 +237,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + 'CIFAR10-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
+        torch.save(state, './checkpoint/' + 'CIFAR10-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
@@ -276,7 +276,7 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weig
 for i in range(500):
     start = timeit.default_timer()
     
-    adjust_learning_rate_long(optimizer, i, args.lr)
+    adjust_learning_rate_long(optimizer, i+1, args.lr)
     func_train(i+1)
     test(i+1)
     

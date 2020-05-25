@@ -17,7 +17,7 @@ import timeit
 parser = argparse.ArgumentParser(description='TODO')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
+parser.add_argument('--weight_decay', default=1e-4, type=float, help='weight decay')
 parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
 parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
 parser.add_argument('--batch_size', default=128, type=int, help='batch_size')
@@ -238,8 +238,9 @@ def test(epoch):
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/' + 'ILSVRC2012-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
-        best_acc = acc_top1
-        best_acc_top5 = acc_top5
+        if acc_top1 > best_acc:
+            best_acc = acc_top1
+            best_acc_top5 = acc_top5
         print("Best_Acc_top1 = %.3f" % acc_top1)
         print("Best_Acc_top5 = %.3f" % acc_top5)
         
@@ -265,7 +266,7 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weig
 for i in range(90):
     start = timeit.default_timer()
     
-    adjust_learning_rate(optimizer, i, args.lr)
+    adjust_learning_rate(optimizer, i+1, args.lr)
     func_train(i+1)
     test(i+1)
     
