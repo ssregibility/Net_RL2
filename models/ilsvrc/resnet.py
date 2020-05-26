@@ -4,8 +4,6 @@ import torch.nn.functional as F
 
 from torch.autograd import Variable
 
-import copy
-
 class BasicBlock_Basis(nn.Module):
     expansion = 1
 
@@ -15,7 +13,6 @@ class BasicBlock_Basis(nn.Module):
         self.unique_rank = unique_rank
         self.shared_basis = shared_basis
         self.relu = nn.ReLU(inplace=True)
-        self.stride = stride
         
         self.total_rank = unique_rank+shared_basis.weight.shape[0]
         
@@ -52,7 +49,7 @@ class BasicBlock_Basis(nn.Module):
         
         out = self.bn2(out)
 
-        out = out + self.shortcut(x)
+        out += self.shortcut(x)
         out = self.relu(out)
         
         return out
