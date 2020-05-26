@@ -51,7 +51,6 @@ class BasicBlock_Basis(nn.Module):
         out = self.coeff_conv2(out)
         
         out = self.bn2(out)
-        out = self.relu(out)
 
         out = out + self.shortcut(x)
         out = self.relu(out)
@@ -197,6 +196,7 @@ class ResNet_Basis(nn.Module):
         torch.nn.init.orthogonal_(self.shared_basis_1.weight)
         torch.nn.init.orthogonal_(self.shared_basis_2.weight)
         torch.nn.init.orthogonal_(self.shared_basis_3.weight)
+        torch.nn.init.orthogonal_(self.shared_basis_4.weight)
 
     def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis, stride=1):
         layers = []

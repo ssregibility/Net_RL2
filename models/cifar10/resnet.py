@@ -68,7 +68,6 @@ class BasicBlock_Basis(nn.Module):
         out = self.coeff_conv2(out)
         
         out = self.bn2(out)
-        out = self.relu(out)
 
         out = out + self.shortcut(x)
         out = self.relu(out)
