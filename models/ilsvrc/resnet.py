@@ -56,62 +56,6 @@ class BasicBlock_Basis(nn.Module):
         out = self.relu(out)
         
         return out
-
-"""
-class BasicBlock_Basis(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1):
-        super(BasicBlock_Basis, self).__init__()
-        
-        self.unique_rank = unique_rank
-        self.shared_basis_1 = shared_basis_1
-        self.shared_basis_2 = shared_basis_2
-        self.relu = nn.ReLU(inplace=True)
-        self.stride = stride
-        
-        self.total_rank_1 = unique_rank+shared_basis_1.weight.shape[0]
-        self.total_rank_2 = unique_rank+shared_basis_2.weight.shape[0]
-        
-        self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.basis_bn1 = nn.BatchNorm2d(self.total_rank_1)
-        self.coeff_conv1 = nn.Conv2d(self.total_rank_1, planes, kernel_size=1, stride=1, padding=0, bias=False)
-        
-        self.bn1 = nn.BatchNorm2d(planes)
-        
-        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=1, padding=1, bias=False)
-        self.basis_bn2 = nn.BatchNorm2d(self.total_rank_2)
-        self.coeff_conv2 = nn.Conv2d(self.total_rank_2, planes, kernel_size=1, stride=1, padding=0, bias=False)
-        
-        self.bn2 = nn.BatchNorm2d(planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion * planes)
-            )
-
-    def forward(self, x):
-        out = torch.cat((self.basis_conv1(x), self.shared_basis_1(x)),dim=1)
-        out = self.basis_bn1(out)
-        out = self.coeff_conv1(out)
-        
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = torch.cat((self.basis_conv2(out), self.shared_basis_2(out)),dim=1)
-        out = self.basis_bn2(out)
-        out = self.coeff_conv2(out)
-        
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = out + self.shortcut(x)
-        out = self.relu(out)
-        
-        return out
-"""
     
 class BasicBlock(nn.Module):
     expansion = 1
