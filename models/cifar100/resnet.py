@@ -121,20 +121,6 @@ class ResNet_Basis(nn.Module):
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-                
-        # Two shared bases are orthogonal-initialized together. 
-        # @@ reserved for double shared basis model
-        """
-        for i in range(1,len(num_blocks)+1):
-            basis_1 = getattr(self, "shared_basis_"+str(i)+"_1")
-            basis_2 = getattr(self, "shared_basis_"+str(i)+"_2")
-            out_chan = basis_1.weight.shape[0]
-            in_chan =  basis_1.weight.shape[1]
-            X = torch.empty(out_chan*2, in_chan, 3, 3)
-            torch.nn.init.orthogonal_(X)
-            basis_1.weight.data = copy.deepcopy(X[:out_chan,:])
-            basis_2.weight.data = copy.deepcopy(X[out_chan:,:])
-        """
 
         # Each share basis is orthogonal-initialized separately
         torch.nn.init.orthogonal_(self.shared_basis_1.weight)
