@@ -67,6 +67,7 @@ class BasicBlock_Basis(nn.Module):
         
         out = self.bn2(out)
 
+        out = F.relu(out, inplace=True)
         out += self.shortcut(x)
         out = F.relu(out, inplace=True)
         
