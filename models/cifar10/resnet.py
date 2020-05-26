@@ -23,7 +23,6 @@ class BasicBlock_Basis(nn.Module):
         self.unique_rank = unique_rank
         self.shared_basis_1 = shared_basis_1
         self.shared_basis_2 = shared_basis_2
-        self.relu = nn.ReLU(inplace=True)
         
         self.total_rank_1 = unique_rank+shared_basis_1.weight.shape[0]
         self.total_rank_2 = unique_rank+shared_basis_2.weight.shape[0]
@@ -60,7 +59,7 @@ class BasicBlock_Basis(nn.Module):
         out = self.coeff_conv1(out)
         
         out = self.bn1(out)
-        out = self.relu(out)
+        out = F.relu(out, inplace=True)
         
         out = torch.cat((self.basis_conv2(out), self.shared_basis_2(out)),dim=1)
         out = self.basis_bn2(out)
@@ -69,7 +68,7 @@ class BasicBlock_Basis(nn.Module):
         out = self.bn2(out)
 
         out += self.shortcut(x)
-        out = self.relu(out)
+        out = F.relu(out, inplace=True)
         
         return out
     
@@ -78,8 +77,6 @@ class BasicBlock(nn.Module):
 
     def __init__(self, in_planes, planes, stride=1, option='A'):
         super(BasicBlock, self).__init__()
-        
-        self.relu = nn.ReLU(inplace=True)
         
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -103,13 +100,13 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = F.relu(out, inplace=True)
 
         out = self.conv2(out)
         out = self.bn2(out)
 
         out += self.shortcut(x)
-        out = self.relu(out)
+        out = F.relu(out, inplace=True)
         
         return out
     
@@ -117,7 +114,6 @@ class ResNet_Basis(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
         super(ResNet_Basis, self).__init__()
         self.in_planes = 16
-        self.relu = nn.ReLU(inplace=True)
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
@@ -192,7 +188,7 @@ class ResNet_Basis(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = F.relu(x, inplace=True)
 
         x = self.layer1(x)
         x = self.layer2(x)
@@ -208,7 +204,6 @@ class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
         self.in_planes = 16
-        self.relu = nn.ReLU(inplace=True)
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
@@ -239,7 +234,7 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = F.relu(x, inplace=True)
 
         x = self.layer1(x)
         x = self.layer2(x)
