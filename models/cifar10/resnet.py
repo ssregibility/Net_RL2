@@ -24,7 +24,6 @@ class BasicBlock_Basis(nn.Module):
         self.shared_basis_1 = shared_basis_1
         self.shared_basis_2 = shared_basis_2
         self.relu = nn.ReLU(inplace=True)
-        self.stride = stride
         
         self.total_rank_1 = unique_rank+shared_basis_1.weight.shape[0]
         self.total_rank_2 = unique_rank+shared_basis_2.weight.shape[0]
@@ -69,7 +68,7 @@ class BasicBlock_Basis(nn.Module):
         
         out = self.bn2(out)
 
-        out = out + self.shortcut(x)
+        out += self.shortcut(x)
         out = self.relu(out)
         
         return out
