@@ -15,19 +15,18 @@ import timeit
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='TODO')
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
-parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
-parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
-parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning Rate')
+parser.add_argument('--momentum', default=0.9, type=float, help='Momentum')
+parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay')
+parser.add_argument('--lambdaR', default=10, type=float, help='Lambda (Basis regularization)')
+parser.add_argument('--shared_rank', default=16, type=int, help='Number of shared base)')
+parser.add_argument('--unique_rank', default=16, type=int, help='Number of unique base')
+parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
-parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
-parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
-parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
-parser.add_argument('--dataset_path', default="./data/", help='dataset path')
-
+parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
+parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
+parser.add_argument('--dataset_path', default="./data/", help='Dataset path')
+parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 args = parser.parse_args()
 
 from models.cifar10 import resnet
@@ -43,8 +42,8 @@ testloader = utils.get_testdata('CIFAR10',args.dataset_path,batch_size=args.batc
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
-#args.visible_device sets which cuda devices to be used"
 
+#args.visible_device sets which cuda devices to be used"
 if 'Basis' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
 else:

@@ -15,19 +15,18 @@ import timeit
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='TODO')
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
-parser.add_argument('--lambdaR', default=10, type=float, help='lambdaR (for basis loss)')
-parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
-parser.add_argument('--batch_size', default=128, type=int, help='batch_size')
-parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
+parser.add_argument('--lr', default=0.1, type=float, help='Learning Rate')
+parser.add_argument('--momentum', default=0.9, type=float, help='Momentum')
+parser.add_argument('--weight_decay', default=1e-4, type=float, help='Weight decay')
+parser.add_argument('--lambdaR', default=10, type=float, help='Lambda (Basis regularization)')
+parser.add_argument('--shared_rank', default=16, type=int, help='Number of shared base)')
+parser.add_argument('--unique_rank', default=16, type=int, help='Number of unique base')
+parser.add_argument('--batch_size', default=128, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
-parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
-parser.add_argument('--pretrained', default=None, help='path of a pretrained model file')
-parser.add_argument('--starting_epoch', default=0, type=int, help='an epoch which model training starts')
+parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
+parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='dataset path')
-
+parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 args = parser.parse_args()
 
 from models.ilsvrc import resnet
@@ -40,10 +39,10 @@ if args.model not in dic_model:
 trainloader = utils.get_traindata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size,download=True, num_workers=4)
 testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=4)
 
+#args.visible_device sets which cuda devices to be used
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
-#args.visible_device sets which cuda devices to be used"
 
 if 'Basis' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
