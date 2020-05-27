@@ -67,7 +67,6 @@ class BasicBlock_Basis(nn.Module):
         
         out = self.bn2(out)
 
-        out = F.relu(out, inplace=True)
         out += self.shortcut(x)
         out = F.relu(out, inplace=True)
         
@@ -267,3 +266,6 @@ def ResNet1202():
 
 def ResNet56_Basis(shared_rank, unique_rank):
     return ResNet_Basis(BasicBlock_Basis, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
+
+def ResNet32_Basis(shared_rank, unique_rank):
+    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
