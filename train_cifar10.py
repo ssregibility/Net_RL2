@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, Res
 args = parser.parse_args()
 
 from models.cifar10 import resnet
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis}
+dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis, 'ResNet32_Basis':resnet.ResNet32_Basis}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
