@@ -37,7 +37,7 @@ class BottleNeck_Basis(nn.Module):
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)),inplace=True)
         out = F.relu(self.bn2(torch.cat((self.basis_conv2(out),self.shared_basis(out)),dim=1)),inplace=True)
-        out = F.relu(self.bn3(self.conv3(out)))
+        out = self.bn3(self.conv3(out))
         out += self.shortcut(x)
         out = F.relu(out,inplace=True)
 
