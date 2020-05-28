@@ -1,276 +1,132 @@
-<!DOCTYPE HTML>
-<html>
-
-<head>
-    <meta charset="utf-8">
-
-    <title>resnext_basis.py (editing)</title>
-    <link id="favicon" rel="shortcut icon" type="image/x-icon" href="/static/base/images/favicon-file.ico?v=e2776a7f45692c839d6eea7d7ff6f3b2">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel="stylesheet" href="/static/components/jquery-ui/themes/smoothness/jquery-ui.min.css?v=3c2a865c832a1322285c55c6ed99abb2" type="text/css" />
-    <link rel="stylesheet" href="/static/components/jquery-typeahead/dist/jquery.typeahead.min.css?v=9df10041c3e07da766e7c48dd4c35e4a" type="text/css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
     
+class BottleNeck_Basis(nn.Module):
+    expansion = 4
     
-<link rel="stylesheet" href="/static/components/codemirror/lib/codemirror.css?v=fc217d502b05f65616356459c0ec1d62">
-<link rel="stylesheet" href="/static/components/codemirror/addon/dialog/dialog.css?v=c89dce10b44d2882a024e7befc2b63f5">
+    def __init__(self, in_channels, out_channels, groups, base_width, unique_rank, shared_basis, stride=1):
+        super().__init__()
+        
+        self.unique_rank = unique_rank
+        self.shared_basis = shared_basis
+        
+        self.total_rank = unique_rank+shared_basis.weight.shape[0]
+        
+        groups = groups
+        width = int(out_channels * (base_width / 64.)) * groups
+        
+        self.conv1 = nn.Conv2d(in_channels, width, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(width)
 
-    <link rel="stylesheet" href="/static/style/style.min.css?v=2165fc0d023f0baf5cce3b2a6db40e22" type="text/css"/>
+        self.basis_conv2 = nn.Conv2d(width, unique_rank, stride=stride, kernel_size=3, padding=1, groups=int(unique_rank/base_width), bias=False)
+        #self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
+        #self.coeff_conv2 = nn.Conv2d(self.total_rank, width, kernel_size=1, stride=stride, padding=0, bias=False) #아래와 중복 - 건너뜀
+        self.bn2 = nn.BatchNorm2d(self.total_rank)
+        self.conv3 = nn.Conv2d(self.total_rank, out_channels * BottleNeck.expansion, kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(out_channels * BottleNeck.expansion)
+
+        self.shortcut = nn.Sequential()
+
+        if stride != 1 or in_channels != out_channels * BottleNeck.expansion:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels * BottleNeck.expansion, stride=stride, kernel_size=1, bias=False),
+                nn.BatchNorm2d(out_channels * BottleNeck.expansion)
+            )
+        
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)),inplace=True)
+        out = F.relu(self.bn2(torch.cat((self.basis_conv2(out),self.shared_basis(out)),dim=1)),inplace=True)
+        out = F.relu(self.bn3(self.conv3(out)))
+        out += self.shortcut(x)
+        out = F.relu(out,inplace=True)
+
+        return out
     
-
-    <link rel="stylesheet" href="/custom/custom.css" type="text/css" />
-    <script src="/static/components/es6-promise/promise.min.js?v=f004a16cb856e0ff11781d01ec5ca8fe" type="text/javascript" charset="utf-8"></script>
-    <script src="/static/components/react/react.production.min.js?v=34f96ffc962a7deecc83037ccb582b58" type="text/javascript"></script>
-    <script src="/static/components/react/react-dom.production.min.js?v=b14d91fb641317cda38dbc9dbf985ab4" type="text/javascript"></script>
-    <script src="/static/components/create-react-class/index.js?v=94feb9971ce6d26211729abc43f96cd2" type="text/javascript"></script>
-    <script src="/static/components/requirejs/require.js?v=951f856e81496aaeec2e71a1c2c0d51f" type="text/javascript" charset="utf-8"></script>
-    <script>
-      require.config({
-          
-          urlArgs: "v=20200528134712",
-          
-          baseUrl: '/static/',
-          paths: {
-            'auth/js/main': 'auth/js/main.min',
-            custom : '/custom',
-            nbextensions : '/nbextensions',
-            kernelspecs : '/kernelspecs',
-            underscore : 'components/underscore/underscore-min',
-            backbone : 'components/backbone/backbone-min',
-            jed: 'components/jed/jed',
-            jquery: 'components/jquery/jquery.min',
-            json: 'components/requirejs-plugins/src/json',
-            text: 'components/requirejs-text/text',
-            bootstrap: 'components/bootstrap/dist/js/bootstrap.min',
-            bootstraptour: 'components/bootstrap-tour/build/js/bootstrap-tour.min',
-            'jquery-ui': 'components/jquery-ui/jquery-ui.min',
-            moment: 'components/moment/min/moment-with-locales',
-            codemirror: 'components/codemirror',
-            termjs: 'components/xterm.js/xterm',
-            typeahead: 'components/jquery-typeahead/dist/jquery.typeahead.min',
-          },
-          map: { // for backward compatibility
-              "*": {
-                  "jqueryui": "jquery-ui",
-              }
-          },
-          shim: {
-            typeahead: {
-              deps: ["jquery"],
-              exports: "typeahead"
-            },
-            underscore: {
-              exports: '_'
-            },
-            backbone: {
-              deps: ["underscore", "jquery"],
-              exports: "Backbone"
-            },
-            bootstrap: {
-              deps: ["jquery"],
-              exports: "bootstrap"
-            },
-            bootstraptour: {
-              deps: ["bootstrap"],
-              exports: "Tour"
-            },
-            "jquery-ui": {
-              deps: ["jquery"],
-              exports: "$"
-            }
-          },
-          waitSeconds: 30,
-      });
-
-      require.config({
-          map: {
-              '*':{
-                'contents': 'services/contents',
-              }
-          }
-      });
-
-      // error-catching custom.js shim.
-      define("custom", function (require, exports, module) {
-          try {
-              var custom = require('custom/custom');
-              console.debug('loaded custom.js');
-              return custom;
-          } catch (e) {
-              console.error("error loading custom.js", e);
-              return {};
-          }
-      })
-
-    document.nbjs_translations = {"domain": "nbjs", "locale_data": {"nbjs": {"": {"domain": "nbjs"}}}};
-    document.documentElement.lang = navigator.language.toLowerCase();
-    </script>
-
+class BottleNeck(nn.Module):
+    expansion = 4
     
-    
+    def __init__(self, in_channels, out_channels, groups=1, base_width=64, stride=1):
+        super().__init__()
+        width = int(out_channels * (base_width / 64.)) * groups
+        self.residual_function = nn.Sequential(
+            nn.Conv2d(in_channels, width, kernel_size=1, bias=False),
+            nn.BatchNorm2d(width),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(width, width, stride=stride, kernel_size=3, padding=1, groups=groups, bias=False),
+            nn.BatchNorm2d(width),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(width, out_channels * BottleNeck.expansion, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels * BottleNeck.expansion),
+        )
 
-</head>
+        self.shortcut = nn.Sequential()
 
-<body class="edit_app "
- 
-data-base-url="/"
-data-file-path="resnext_basis.py"
+        if stride != 1 or in_channels != out_channels * BottleNeck.expansion:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels * BottleNeck.expansion, stride=stride, kernel_size=1, bias=False),
+                nn.BatchNorm2d(out_channels * BottleNeck.expansion)
+            )
+        
+    def forward(self, x):
+        return nn.ReLU(inplace=True)(self.residual_function(x) + self.shortcut(x))
 
-  
-    data-jupyter-api-token="8f2f097d86c36d6edb7c816fa77202ab5d65cc6372a17ff0"
-  
- 
+class ResNext_Basis(nn.Module):
+    def __init__(self, block, block_without_basis, num_blocks, num_classes, groups, base_width, shared_rank,unique_rank):
+        super(ResNext_Basis, self).__init__()
+        self.in_planes = 64
 
-dir="ltr">
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        
+        width = int(64 * (base_width / 64.)) * groups
+        self.shared_basis_1 = nn.Conv2d(width, shared_rank, kernel_size=3, stride=1, padding=1, groups=int(shared_rank/4), bias=False)
+        #nn.init.orthogonal_(self.shared_basis_1.weight)
+        self.layer1 = self._make_layer(block, block_without_basis, 64, num_blocks[0], groups, base_width, unique_rank, self.shared_basis_1, stride=1)
+        
+        width = int(128 * (base_width / 64.)) * groups
+        self.shared_basis_2 = nn.Conv2d(width, shared_rank*2, kernel_size=3, stride=1, padding=1, groups=int(shared_rank/4), bias=False)
+        #nn.init.orthogonal_(self.shared_basis_2.weight)
+        self.layer2 = self._make_layer(block, block_without_basis, 128, num_blocks[1], groups, base_width, unique_rank*2, self.shared_basis_2, stride=2)
+        
+        width = int(256 * (base_width / 64.)) * groups
+        self.shared_basis_3 = nn.Conv2d(width, shared_rank*4, kernel_size=3, stride=1, padding=1, groups=int(shared_rank/4), bias=False)
+        #nn.init.orthogonal_(self.shared_basis_3.weight)
+        self.layer3 = self._make_layer(block, block_without_basis, 256, num_blocks[2], groups, base_width, unique_rank*4, self.shared_basis_3, stride=2)
+        
+        width = int(512 * (base_width / 64.)) * groups
+        self.shared_basis_4 = nn.Conv2d(width, shared_rank*8, kernel_size=3, stride=1, padding=1, groups=int(shared_rank/4), bias=False)
+        #nn.init.orthogonal_(self.shared_basis_4.weight)
+        self.layer4 = self._make_layer(block, block_without_basis, 512, num_blocks[3], groups, base_width, unique_rank*8, self.shared_basis_4, stride=2)
+        
+        self.linear = nn.Linear(512*block.expansion, num_classes)
 
-<noscript>
-    <div id='noscript'>
-      Jupyter Notebook requires JavaScript.<br>
-      Please enable it to proceed. 
-  </div>
-</noscript>
+    def _make_layer(self, block, block_without_basis, planes, num_blocks, groups, base_width, unique_rank, shared_basis, stride):
+        strides = [stride] + [1]*(num_blocks-1)
+        layers = []
+        
+        #There is no parameter shraing for a first block of the group
+        layers.append(block_without_basis(self.in_planes, planes, groups, base_width, stride))
+        self.in_planes = planes * block.expansion
+            
+        #After the first block, parameter shraing happens in every blocks in the group
+        for stride in strides[1:]:
+            layers.append(block(self.in_planes, planes, groups, base_width, unique_rank, shared_basis, stride))
+            self.in_planes = planes * block.expansion
+            
+        return nn.Sequential(*layers)
 
-<div id="header" role="navigation" aria-label="Top Menu">
-  <div id="header-container" class="container">
-  <div id="ipython_notebook" class="nav navbar-brand"><a href="/tree?token=8f2f097d86c36d6edb7c816fa77202ab5d65cc6372a17ff0" title='dashboard'>
-      <img src='/static/base/images/logo.png?v=641991992878ee24c6f3826e81054a0f' alt='Jupyter Notebook'/>
-  </a></div>
-
-  
-
-<span id="save_widget" class="pull-left save_widget">
-    <span class="filename"></span>
-    <span class="last_modified"></span>
-</span>
-
-
-  
-
-  
-  
-  
-  
-
-    <span id="login_widget">
-      
-        <button id="logout" class="btn btn-sm navbar-btn">Logout</button>
-      
-    </span>
-
-  
-
-  
-  
-  </div>
-  <div class="header-bar"></div>
-
-  
-
-<div id="menubar-container" class="container">
-  <div id="menubar">
-    <div id="menus" class="navbar navbar-default" role="navigation">
-      <div class="container-fluid">
-          <p  class="navbar-text indicator_area">
-          <span id="current-mode" >current mode</span>
-          </p>
-        <button type="button" class="btn btn-default navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-          <i class="fa fa-bars"></i>
-          <span class="navbar-text">Menu</span>
-        </button>
-        <ul class="nav navbar-nav navbar-right">
-          <li id="notification_area"></li>
-        </ul>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">File</a>
-              <ul id="file-menu" class="dropdown-menu">
-                <li id="new-file"><a href="#">New</a></li>
-                <li id="save-file"><a href="#">Save</a></li>
-                <li id="rename-file"><a href="#">Rename</a></li>
-                <li id="download-file"><a href="#">Download</a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Edit</a>
-              <ul id="edit-menu" class="dropdown-menu">
-                <li id="menu-find"><a href="#">Find</a></li>
-                <li id="menu-replace"><a href="#">Find &amp; Replace</a></li>
-                <li class="divider"></li>
-                <li class="dropdown-header">Key Map</li>
-                <li id="menu-keymap-default"><a href="#">Default<i class="fa"></i></a></li>
-                <li id="menu-keymap-sublime"><a href="#">Sublime Text<i class="fa"></i></a></li>
-                <li id="menu-keymap-vim"><a href="#">Vim<i class="fa"></i></a></li>
-                <li id="menu-keymap-emacs"><a href="#">emacs<i class="fa"></i></a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">View</a>
-              <ul id="view-menu" class="dropdown-menu">
-              <li id="toggle_header" title="Show/Hide the logo and notebook title (above menu bar)">
-              <a href="#">Toggle Header</a></li>
-              <li id="menu-line-numbers"><a href="#">Toggle Line Numbers</a></li>
-              </ul>
-            </li>
-            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Language</a>
-              <ul id="mode-menu" class="dropdown-menu">
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="lower-header-bar"></div>
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)),inplace=True)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = F.avg_pool2d(out, 4)
+        out = out.view(out.size(0), -1)
+        out = self.linear(out)
+        return out
 
 
-</div>
-
-<div id="site">
-
-
-<div id="texteditor-backdrop">
-<div id="texteditor-container" class="container"></div>
-</div>
-
-
-</div>
-
-
-
-
-
-
-    
-
-
-<script src="/static/edit/js/main.min.js?v=e3253dc1d2a1f445711555bd8ea58ada" type="text/javascript" charset="utf-8"></script>
-
-
-<script type='text/javascript'>
-  function _remove_token_from_url() {
-    if (window.location.search.length <= 1) {
-      return;
-    }
-    var search_parameters = window.location.search.slice(1).split('&');
-    for (var i = 0; i < search_parameters.length; i++) {
-      if (search_parameters[i].split('=')[0] === 'token') {
-        // remote token from search parameters
-        search_parameters.splice(i, 1);
-        var new_search = '';
-        if (search_parameters.length) {
-          new_search = '?' + search_parameters.join('&');
-        }
-        var new_url = window.location.origin + 
-                      window.location.pathname + 
-                      new_search + 
-                      window.location.hash;
-        window.history.replaceState({}, "", new_url);
-        return;
-      }
-    }
-  }
-  _remove_token_from_url();
-</script>
-</body>
-
-</html>
+def ResNext50_32x4d_Basis(num_classes, shared_rank, unique_rank):
+    return ResNext_Basis(BottleNeck_Basis, BottleNeck, [3,4,6,3],num_classes,32,4,shared_rank,unique_rank)
