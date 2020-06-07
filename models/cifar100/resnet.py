@@ -4,6 +4,54 @@ import torch.nn.functional as F
 
 from torch.autograd import Variable
 
+#BasicBlock for unique basis only models
+class BasicBlock_Unique(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_planes, planes, unique_rank, stride=1):
+        super(BasicBlock_Unique, self).__init__()
+        
+        self.unique_rank = unique_rank
+        self.total_rank = unique_rank
+        
+        self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(self.total_rank)
+        self.coeff_conv1 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=1, padding=0, bias=False)
+        
+        self.bn1 = nn.BatchNorm2d(planes)
+        
+        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
+        self.coeff_conv2 = nn.Conv2d(self.total_rank, planes, kernel_size=1, stride=1, padding=0, bias=False)
+        
+        self.bn2 = nn.BatchNorm2d(planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes)
+            )
+
+    def forward(self, x):
+        out = self.basis_conv1(x)
+        out = self.basis_bn1(out)
+        out = self.coeff_conv1(out)
+        
+        out = self.bn1(out)
+        out = F.relu(out, inplace=True)
+
+        out = self.basis_conv2(out)
+        out = self.basis_bn2(out)
+        out = self.coeff_conv2(out)
+        
+        out = self.bn2(out)
+
+        out += self.shortcut(x)
+        out = F.relu(out, inplace=True)
+        
+        return out
+
 #BasicBlock for shared basis only models
 class BasicBlock_Shared(nn.Module):
     expansion = 1
@@ -132,6 +180,58 @@ class BasicBlock(nn.Module):
         out = F.relu(out, inplace=True)
         
         return out
+    
+#ResNet for unique basis only models
+class ResNet_Unique(nn.Module):
+    def __init__(self, block_basis, block_original, num_blocks, unique_rank, num_classes=100):
+        super(ResNet_Unique, self).__init__()
+        self.in_planes = 64
+
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        
+        self.layer1 = self._make_layer(block_basis, block_original, 64, num_blocks[0], unique_rank*1, stride=1)
+        self.layer2 = self._make_layer(block_basis, block_original, 128, num_blocks[1], unique_rank*2, stride=2)
+        self.layer3 = self._make_layer(block_basis, block_original, 256, num_blocks[2], unique_rank*4, stride=2)
+        self.layer4 = self._make_layer(block_basis, block_original, 512, num_blocks[3], unique_rank*8, stride=2)
+        
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                #initialize every con2d first, then initialize shared basis again later
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, stride=1):
+        layers = []
+        
+        layers.append(block_original(self.in_planes, planes, stride))
+
+        self.in_planes = planes * block_original.expansion
+        for _ in range(1, blocks):
+            layers.append(block_basis(self.in_planes, planes, unique_rank))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = F.relu(x, inplace=True)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+     
+        return x
     
 #ResNet for shared basis only models
 class ResNet_Shared(nn.Module):
@@ -323,3 +423,6 @@ def ResNet34_Basis(shared_rank, unique_rank):
 
 def ResNet34_Shared(shared_rank):
     return ResNet_Shared(BasicBlock_Shared, BasicBlock, [3, 4, 6, 3], shared_rank)
+
+def ResNet34_Unique(unique_rank):
+    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [3, 4, 6, 3], unique_rank)
