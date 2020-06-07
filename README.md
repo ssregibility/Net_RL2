@@ -1,24 +1,62 @@
-train.py
+> A template README.md for code accompanying a Machine Learning paper
 
-TODO:
+# My Paper Title
 
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+This repository is the official implementation of [My Paper Title](https://arxiv.org/abs/2030.12345). 
 
-parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+> Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials
 
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay')
+## Requirements
 
-parser.add_argument('--lambda2', default=0.5, type=float, help='lambda2 (for basis loss)')
+To install requirements:
 
-parser.add_argument('--shared_rank', default=16, type=int, help='number of shared base)')
+```setup
+pip install -r requirements.txt
+```
 
-parser.add_argument('--dataset', default="CIFAR100", help='CIFAR10, CIFAR100')
+> Describe how to set up the environment, e.g. pip/conda/docker commands, download datasets, etc...
 
-parser.add_argument('--batch_size', default=256, type=int, help='batch_size')
+## Training
 
-parser.add_argument('--model', default="ResNet34", help='ResNet152, ResNet101, ResNet50, ResNet34, ResNet18, ResNet34_Basis, ResNet18_Basis')
+To train the model(s) in the paper, run this command:
 
-parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
+```train
+python train.py --input-data <path_to_data> --alpha 10 --beta 20
+```
 
-parser.add_argument('--unique_rank', default=16, type=int, help='number of unique base')
+> Describe how to train the models, with example commands on how to train the models in your paper, including the full training procedure and appropriate hyperparameters.
 
+## Evaluation
+
+To evaluate my model on ImageNet, run:
+
+```eval
+python eval.py --model-file mymodel.pth --benchmark imagenet
+```
+
+> Describe how to evaluate the trained models on benchmarks reported in the paper, give commands that produce the results (section below).
+
+## Pre-trained Models
+
+You can download pretrained models here:
+
+- [My awesome model](https://drive.google.com/mymodel.pth) trained on ImageNet using parameters x,y,z. 
+
+> Give a link to where/how the pretrained models can be downloaded and how they were trained (if applicable).  Alternatively you can have an additional column in your results table with a link to the models.
+
+## Results
+
+Our model achieves the following performance on :
+
+### [Image Classification on ImageNet](https://paperswithcode.com/sota/image-classification-on-imagenet)
+
+| Model name         | Top 1 Accuracy  | Top 5 Accuracy |
+| ------------------ |---------------- | -------------- |
+| My awesome model   |     85%         |      95%       |
+
+> Include a table of results from your paper, and link back to the leaderboard for clarity and context. If your main result is a figure, include that figure and link to the command or notebook to reproduce it. 
+
+
+## Contributing
+
+> Pick a licence and describe how to contribute to your code repository. 
