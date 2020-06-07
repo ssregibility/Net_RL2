@@ -180,17 +180,17 @@ class DenseNet_Basis(nn.Module):
             in_channels += self.growth_rate
         return dense_block
 
-def densenet121():
+def DenseNet121():
     return DenseNet(BottleNeck, [6,12,24,16], 100, growth_rate=32)
 
-def densenet169():
+def DenseNet169():
     return DenseNet(BottleNeck, [6,12,32,32], 100, growth_rate=32)
 
-def densenet201():
+def DenseNet201():
     return DenseNet(BottleNeck, [6,12,48,32], 100, growth_rate=32)
 
-def densenet161():
+def DenseNet161():
     return DenseNet(BottleNeck, [6,12,36,24], 100, growth_rate=48)
 
-def densenet121_Basis(shared_rank, unique_rank):
+def DenseNet121_Basis(shared_rank, unique_rank):
     return DenseNet_Basis(BottleNeck_Basis, [6,12,24,16], 100, shared_rank, unique_rank, growth_rate=32)

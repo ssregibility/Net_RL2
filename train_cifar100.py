@@ -29,8 +29,8 @@ parser.add_argument('--dataset_path', default="./data/", help='Dataset path')
 parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNext1202')
 args = parser.parse_args()
 
-from models.cifar100 import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Unique':resnet.ResNet34_Unique, 'ResNet34_Shared':resnet.ResNet34_Shared}
+from models.cifar100 import resnet, densenet, resnext
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Unique':resnet.ResNet34_Unique, 'ResNet34_Shared':resnet.ResNet34_Shared, 'DenseNet121':densenet.DenseNet121, 'DenseNet121_Basis':densenet.DenseNet121_Basis, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext50_Basis':resnext.ResNext50_32x4d_Basis}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -97,7 +97,7 @@ def train(epoch):
 # Training for parameter shraed models
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch, include_unique_basis=False):
+def train_basis(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -123,19 +123,13 @@ def train_basis(epoch, include_unique_basis=False):
         # get similarity of basis filters
         cnt_sim = 0 
         sim = 0
-        for gid in range(1, 5):  # ResNet has 4 groups
-            layer = getattr(net, "layer"+str(gid))
+        for gid in range(1, 5):  # all models have 4 groups
             shared_basis = getattr(net,"shared_basis_"+str(gid))
 
             num_shared_basis = shared_basis.weight.shape[0]
             num_all_basis = num_shared_basis 
 
             all_basis =(shared_basis.weight,)
-            if (include_unique_basis == True):  
-                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
-                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
-                for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
 
             B = torch.cat(all_basis).view(num_all_basis, -1)
             #print("B size:", B.shape)
@@ -146,26 +140,8 @@ def train_basis(epoch, include_unique_basis=False):
             # make diagonal zeros
             D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
             
-            #print("D size:", D.shape)
-         
-            if (include_unique_basis == True):  
-                # orthogonalities btwn shared<->(shared/unique)
-                sim += torch.sum(D[0:num_shared_basis,:])  
-                cnt_sim += num_shared_basis*num_all_basis
-
-                # orthogonalities btwn unique<->unique in the same layer
-                for i in range(1, len(layer)):
-                    for j in range(2):  # conv1 & conv2
-                         idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                         sim += torch.sum(\
-                                 D[idx_base:idx_base + num_unique_basis, \
-                                 idx_base:idx_base+num_unique_basis])
-                         cnt_sim += num_unique_basis ** 2 
-            else: # orthogonalities only btwn shared basis
-                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-                cnt_sim += num_shared_basis**2
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
 
         #average similarity
         avg_sim = sim / cnt_sim
@@ -187,7 +163,7 @@ def train_basis(epoch, include_unique_basis=False):
     
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
-        
+                                
 #Test for models
 def test(epoch):
     global best_acc
