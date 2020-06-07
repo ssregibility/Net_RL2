@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, Res
 args = parser.parse_args()
 
 from models.ilsvrc import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis}
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Single':resnet.ResNet34_Single}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -44,27 +44,18 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-if 'Basis' in args.model:
+if 'Basis' in args.model or 'Single' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
 else:
     net = dic_model[args.model]()
     
 net = net.to(device)
 
-if args.pretrained != None:
-    checkpoint = torch.load(args.pretrained)
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-                    
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
 #Training for standard models
 def train(epoch):
-    if epoch < args.starting_epoch:
-        return
-    
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
       
@@ -103,9 +94,99 @@ def train(epoch):
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
 def train_basis(epoch, include_unique_basis=False):
-    if epoch < args.starting_epoch:
-        return
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
     
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # ResNet has 4 groups
+            layer = getattr(net, "layer"+str(gid))
+            shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
+            shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
+
+            num_shared_basis = shared_basis_2.weight.shape[0] + shared_basis_1.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
+            if (include_unique_basis == True):  
+                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
+                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
+                for i in range(1, len(layer)):
+                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            #print("D size:", D.shape)
+         
+            if (include_unique_basis == True):  
+                # orthogonalities btwn shared<->(shared/unique)
+                sim += torch.sum(D[0:num_shared_basis,:])  
+                cnt_sim += num_shared_basis*num_all_basis
+
+                # orthogonalities btwn unique<->unique in the same layer
+                for i in range(1, len(layer)):
+                    for j in range(2):  # conv1 & conv2
+                         idx_base = num_shared_basis   \
+                          + (i-1) * (num_unique_basis) * 2 \
+                          + num_unique_basis * j 
+                         sim += torch.sum(\
+                                 D[idx_base:idx_base + num_unique_basis, \
+                                 idx_base:idx_base+num_unique_basis])
+                         cnt_sim += num_unique_basis ** 2 
+            else: # orthogonalities only btwn shared basis
+                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+                cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim)
+
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+    
+# Training for parameter shraed models, single basis
+def train_basis_single(epoch, include_unique_basis=False):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -198,8 +279,6 @@ def train_basis(epoch, include_unique_basis=False):
         
 #Test for models
 def test(epoch):
-    if epoch < args.starting_epoch:
-        return
     global best_acc
     global best_acc_top5
     net.eval()
@@ -240,8 +319,8 @@ def test(epoch):
         if acc_top1 > best_acc:
             best_acc = acc_top1
             best_acc_top5 = acc_top5
-        print("Best_Acc_top1 = %.3f" % acc_top1)
-        print("Best_Acc_top5 = %.3f" % acc_top5)
+        print("Current_Acc_top1 = %.3f" % acc_top1)
+        print("Current_Acc_top5 = %.3f" % acc_top5)
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
@@ -259,10 +338,18 @@ best_acc_top5 = 0
 func_train = train
 if 'Basis' in args.model:
     func_train = train_basis
+elif 'Single' in args.model:
+    func_train = train_basis_single
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
+if args.pretrained != None:
+    checkpoint = torch.load(args.pretrained)
+    net.load_state_dict(checkpoint['net_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    best_acc = checkpoint['acc']
     
-for i in range(90):
+for i in range(args.starting_epoch,90):
     start = timeit.default_timer()
     
     adjust_learning_rate(optimizer, i+1, args.lr)
