@@ -86,7 +86,7 @@ Our model achieves the following performance on :
 
 ### CIFAR-100 Classifcation
 
-| Model name         | Top 1 Error  | Paramameters | FLOPs |
+| Model name         | Top 1 Error  | Params | FLOPs |
 | ------------------ |---------------- | ------------ | ----- |
 | ResNet34-S8U1      |     23.11%         |      5.87M     |  0.79G  |
 | ResNet34-S16U1     |     22.64%         |      6.49M     |  1.05G  |
@@ -96,7 +96,7 @@ Our model achieves the following performance on :
 
 ### CIFAR-10 Classifcation
 
-| Model name         | Top 1 Error  | Paramameters | FLOPs |
+| Model name         | Top 1 Error  | Params | FLOPs |
 | ------------------ |---------------- | ------------ | ----- |
 | ResNet32-S8U1      |     8.08%         |      0.15M     |  0.10G  |
 | ResNet32-S16U1     |     7.43%         |      0.20M     |  0.16G  |
@@ -107,7 +107,7 @@ Our model achieves the following performance on :
 
 ### ILSVRC2012 Classifcation
 
-| Model name         | Top 1 Error  | Top 5 Error | Paramameters | FLOPs |
+| Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |
 | ------------------ |---------------- | -------------- | ------------ | ----- |
 | ResNet34-S32U1     |     28.42%         |      9.55%       |      8.20M     |  4.98G  |
 | ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  |
