@@ -14,6 +14,63 @@ class LambdaLayer(nn.Module):
     def forward(self, x):
         return self.lambd(x)
     
+#BasicBlock for models with unique basis only
+class BasicBlock_Unique(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_planes, planes, unique_rank, stride=1, option='A'):
+        super(BasicBlock_Unique, self).__init__()
+        
+        self.unique_rank = unique_rank
+        
+        self.total_rank_1 = unique_rank
+        self.total_rank_2 = unique_rank
+        
+        self.basis_conv1 = nn.Conv2d(in_planes, unique_rank, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.basis_bn1 = nn.BatchNorm2d(self.total_rank_1)
+        self.coeff_conv1 = nn.Conv2d(self.total_rank_1, planes, kernel_size=1, stride=1, padding=0, bias=False)
+        
+        self.bn1 = nn.BatchNorm2d(planes)
+        
+        self.basis_conv2 = nn.Conv2d(planes, unique_rank, kernel_size=3, stride=1, padding=1, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(self.total_rank_2)
+        self.coeff_conv2 = nn.Conv2d(self.total_rank_2, planes, kernel_size=1, stride=1, padding=0, bias=False)
+        
+        self.bn2 = nn.BatchNorm2d(planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != planes:
+            if option == 'A':
+                """
+                For CIFAR10 ResNet paper uses option A.
+                """
+                self.shortcut = LambdaLayer(lambda x:
+                                            F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
+            elif option == 'B':
+                self.shortcut = nn.Sequential(
+                     nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                     nn.BatchNorm2d(self.expansion * planes)
+                )
+
+    def forward(self, x):           
+        out = self.basis_conv1(x)
+        out = self.basis_bn1(out)
+        out = self.coeff_conv1(out)
+        
+        out = self.bn1(out)
+        out = F.relu(out, inplace=True)
+        
+        out = self.basis_conv2(out)
+        out = self.basis_bn2(out)
+        out = self.coeff_conv2(out)
+        
+        out = self.bn2(out)
+
+        out += self.shortcut(x)
+        out = F.relu(out, inplace=True)
+        
+        return out
+    
 #BasicBlock for models with shared basis only
 class BasicBlock_Shared(nn.Module):
     expansion = 1
@@ -71,11 +128,11 @@ class BasicBlock_Shared(nn.Module):
         return out
     
 #BasicBlock for single basis models
-class BasicBlock_Basis_Single(nn.Module):
+class BasicBlock_Single(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1, option='A'):
-        super(BasicBlock_Basis_Single, self).__init__()
+        super(BasicBlock_Single, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis = shared_basis
@@ -127,7 +184,7 @@ class BasicBlock_Basis_Single(nn.Module):
         
         return out
     
-#BasicBlock for double basis models
+#BasicBlock for double basis models (proposed models)
 class BasicBlock_Basis(nn.Module):
     expansion = 1
 
@@ -225,6 +282,69 @@ class BasicBlock(nn.Module):
         
         return out
     
+#ResNet for unique basis only models
+class ResNet_Unique(nn.Module):
+    def __init__(self, block_basis, block_original, num_blocks, unique_rank, num_classes=10):
+        super(ResNet_Unique, self).__init__()
+        self.in_planes = 16
+
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(16)
+        
+        self.layer1 = self._make_layer(block_basis, block_original, 16, num_blocks[0], unique_rank*1, stride=1)
+        
+        self.layer2 = self._make_layer(block_basis, block_original, 32, num_blocks[1], unique_rank*2, stride=2)
+        
+        self.layer3 = self._make_layer(block_basis, block_original, 64, num_blocks[2], unique_rank*4, stride=2)
+        
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(64, num_classes)
+        
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                #initialize every con2d first, then initialize shared basis again later
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, stride=1):
+        layers = []
+        
+        layers.append(block_original(self.in_planes, planes, stride))
+        
+        self.in_planes = planes * block_original.expansion
+        for _ in range(1, blocks):
+            layers.append(block_basis(self.in_planes, planes, unique_rank))
+
+        return nn.Sequential(*layers)
+    
+    def _make_layer_original(self, block_original, planes, blocks, stride=1):
+        layers = []
+        
+        layers.append(block_original(self.in_planes, planes, stride))
+        
+        self.in_planes = planes * block_original.expansion
+        for _ in range(1, blocks):
+            layers.append(block_original(self.in_planes, planes, stride))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = F.relu(x, inplace=True)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+     
+        return x
+    
 #ResNet for shared basis only models
 class ResNet_Shared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, num_classes=10):
@@ -317,9 +437,9 @@ class ResNet_Shared(nn.Module):
         return x
     
 #ResNet for single basis only models
-class ResNet_Basis_Single(nn.Module):
+class ResNet_Single(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
-        super(ResNet_Basis_Single, self).__init__()
+        super(ResNet_Single, self).__init__()
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -389,6 +509,7 @@ class ResNet_Basis_Single(nn.Module):
      
         return x
     
+#ResNet for proposed models
 class ResNet_Basis(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
         super(ResNet_Basis, self).__init__()
@@ -479,6 +600,7 @@ class ResNet_Basis(nn.Module):
      
         return x
 
+#original resnet
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
@@ -550,13 +672,19 @@ def ResNet32_Basis(shared_rank, unique_rank):
     return ResNet_Basis(BasicBlock_Basis, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
 def ResNet56_Single(shared_rank, unique_rank):
-    return ResNet_Basis_Single(BasicBlock_Basis_Single, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
+    return ResNet_Single(BasicBlock_Single, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
 
 def ResNet32_Single(shared_rank, unique_rank):
-    return ResNet_Basis_Single(BasicBlock_Basis_Single, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
+    return ResNet_Single(BasicBlock_Single, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
 def ResNet56_Shared(shared_rank):
-    return ResNet_Basis(BasicBlock_Shared, BasicBlock, [9, 9, 9], shared_rank)
+    return ResNet_Shared(BasicBlock_Shared, BasicBlock, [9, 9, 9], shared_rank)
 
 def ResNet32_Shared(shared_rank):
-    return ResNet_Basis(BasicBlock_Shared, BasicBlock, [5, 5, 5], shared_rank)
+    return ResNet_Shared(BasicBlock_Shared, BasicBlock, [5, 5, 5], shared_rank)
+
+def ResNet56_Unique(unique_rank):
+    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [9, 9, 9], unique_rank)
+
+def ResNet32_Unique(unique_rank):
+    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [5, 5, 5], unique_rank)
