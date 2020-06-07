@@ -15,19 +15,19 @@ pip3 install -r requirements.txt
 To train the models in the paper on CIFAR-10, run this command:
 
 ```train
-python train_cifar10.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet56_Basis
+python3 train_cifar10.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet56_Basis
 ```
 
 To train the models in the paper on CIFAR-100, run this command:
 
 ```train
-python train_cifar100.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_Basis
+python3 train_cifar100.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_Basis
 ```
 
 To train the models in the paper on ILSVRC2012, run this command:
 
 ```train
-python train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --shared_rank=32 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_Basis
+python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --shared_rank=32 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_Basis
 ```
 
 ## Evaluation
