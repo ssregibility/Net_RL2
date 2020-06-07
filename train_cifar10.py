@@ -39,11 +39,11 @@ if args.model not in dic_model:
 trainloader = utils.get_traindata('CIFAR10',args.dataset_path,batch_size=args.batch_size,download=True)
 testloader = utils.get_testdata('CIFAR10',args.dataset_path,batch_size=args.batch_size)
 
+#args.visible_device sets which cuda devices to be used"
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-#args.visible_device sets which cuda devices to be used"
 if 'Basis' in args.model or 'Single' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
 elif 'Shared' in args.model:
