@@ -93,7 +93,7 @@ def train(epoch):
 # Training for parameter shraed models
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch, include_unique_basis=False):
+def train_basis(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -186,7 +186,7 @@ def train_basis(epoch, include_unique_basis=False):
     print("Training_Acc_Top5 = %.3f" % acc_top5)
     
 # Training for parameter shraed models, single basis
-def train_basis_single(epoch, include_unique_basis=False):
+def train_basis_single(epoch):
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -220,11 +220,6 @@ def train_basis_single(epoch, include_unique_basis=False):
             num_all_basis = num_shared_basis 
 
             all_basis =(shared_basis.weight,)
-            if (include_unique_basis == True):  
-                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
-                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
-                for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
 
             B = torch.cat(all_basis).view(num_all_basis, -1)
             #print("B size:", B.shape)
@@ -237,24 +232,8 @@ def train_basis_single(epoch, include_unique_basis=False):
             
             #print("D size:", D.shape)
          
-            if (include_unique_basis == True):  
-                # orthogonalities btwn shared<->(shared/unique)
-                sim += torch.sum(D[0:num_shared_basis,:])  
-                cnt_sim += num_shared_basis*num_all_basis
-
-                # orthogonalities btwn unique<->unique in the same layer
-                for i in range(1, len(layer)):
-                    for j in range(2):  # conv1 & conv2
-                         idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                         sim += torch.sum(\
-                                 D[idx_base:idx_base + num_unique_basis, \
-                                 idx_base:idx_base+num_unique_basis])
-                         cnt_sim += num_unique_basis ** 2 
-            else: # orthogonalities only btwn shared basis
-                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-                cnt_sim += num_shared_basis**2
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
 
         #average similarity
         avg_sim = sim / cnt_sim
