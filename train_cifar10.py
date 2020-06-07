@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, Res
 args = parser.parse_args()
 
 from models.cifar10 import resnet
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis, 'ResNet32_Basis':resnet.ResNet32_Basis}
+dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis, 'ResNet32_Basis':resnet.ResNet32_Basis, 'ResNet56_Single':resnet.ResNet56_Single, 'ResNet32_Single':resnet.ResNet32_Single, 'ResNet56_Shared':resnet.ResNet56_Shared, 'ResNet32_Shared':resnet.ResNet32_Shared, 'ResNet56_Unique':resnet.ResNet56_Unique, 'ResNet32_Unique':resnet.ResNet32_Unique}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -44,27 +44,22 @@ os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
 #args.visible_device sets which cuda devices to be used"
-if 'Basis' in args.model:
+if 'Basis' in args.model or 'Single' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
+elif 'Shared' in args.model:
+    net = dic_model[args.model](args.shared_rank)
+elif 'Unique' in args.model:
+    net = dic_model[args.model](args.unique_rank)
 else:
     net = dic_model[args.model]()
     
 net = net.to(device)
-
-if args.pretrained != None:
-    checkpoint = torch.load(args.pretrained)
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
                     
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
 #Training for standard models
-def train(epoch):
-    if epoch < args.starting_epoch:
-        return
-    
+def train(epoch):    
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -103,9 +98,6 @@ def train(epoch):
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
 def train_basis(epoch, include_unique_basis=True):
-    if epoch < args.starting_epoch:
-        return
-    
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -197,10 +189,100 @@ def train_basis(epoch, include_unique_basis=True):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
     
+# Training for parameter shraed models, in case of single shared basis per basicblock
+def train_basis_single(epoch, include_unique_basis=True):
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
+            layer = getattr(net, "layer"+str(gid))
+            shared_basis = getattr(net,"shared_basis_"+str(gid))
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight, )
+            if (include_unique_basis == True):  
+                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
+                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
+                for i in range(1, len(layer)):
+                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            #print("D size:", D.shape)
+           
+            if (include_unique_basis == True):  
+                # orthogonalities btwn shared<->(shared/unique)
+                sim += torch.sum(D[0:num_shared_basis,:])  
+                cnt_sim += num_shared_basis*num_all_basis
+                
+                # orthogonalities btwn unique<->unique in the same layer
+                for i in range(1, len(layer)):
+                    for j in range(2):  # conv1 & conv2
+                         idx_base = num_shared_basis   \
+                          + (i-1) * (num_unique_basis) * 2 \
+                          + num_unique_basis * j 
+                         sim += torch.sum(\
+                                 D[idx_base:idx_base + num_unique_basis, \
+                                 idx_base:idx_base+num_unique_basis])
+                         cnt_sim += num_unique_basis ** 2 
+            else: # orthogonalities only btwn shared basis
+                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+                cnt_sim += num_shared_basis**2
+        
+        #average similarity
+        avg_sim = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim)
+
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+    
 #Test for models
 def test(epoch):
-    if epoch < args.starting_epoch:
-        return
     global best_acc
     global best_acc_top5
     net.eval()
@@ -267,48 +349,28 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
-if 'Basis' in args.model:
+if 'Basis' in args.model or 'Shared' in args.model:
     func_train = train_basis
+elif 'Single' in args.model:
+    func_train = train_basis_single
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
-for i in range(500):
+if args.pretrained != None:
+    checkpoint = torch.load(args.pretrained)
+    net.load_state_dict(checkpoint['net_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    best_acc = checkpoint['acc']
+    
+for i in range(args.starting_epoch, 300):
     start = timeit.default_timer()
     
-    adjust_learning_rate_long(optimizer, i+1, args.lr)
+    adjust_learning_rate(optimizer, i+1, args.lr)
     func_train(i+1)
     test(i+1)
     
     stop = timeit.default_timer()
     print('Time: ', stop - start)  
-    
-"""
-    #============
-    
-checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
-
-optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
-
-for i in range(75):
-    func_train(i+151)
-    test(i+151)
-    
-    #============
-    
-checkpoint = torch.load('./checkpoint/' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
-net.load_state_dict(checkpoint['net'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
-
-optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
-
-for i in range(75):
-        func_train(i+226)
-        test(i+226)
-"""
 
 print("Best_Acc_top1 = %.3f" % best_acc)
 print("Best_Acc_top5 = %.3f" % best_acc_top5)
