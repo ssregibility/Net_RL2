@@ -26,6 +26,7 @@ class BottleNeck_Basis(nn.Module):
         self.shared_basis = shared_basis
         self.total_rank = unique_rank+shared_basis.weight.shape[0]
         
+        """
         self.bn0 = nn.BatchNorm2d(in_channels)
         #relu
         self.conv1 = nn.Conv2d(in_channels, unique_rank, kernel_size=1, bias=False)
@@ -34,10 +35,20 @@ class BottleNeck_Basis(nn.Module):
         self.basis_conv2 = nn.Conv2d(inner_channels, growth_rate, kernel_size=3, padding=1, bias=False)
         self.basis_bn2 = nn.BatchNorm2d(inner_channels)
         self.coeff_conv2 = nn.Conv2d(self.total_rank, inner_channels, kernel_size=1, bias=False)
+        """
+        
+        self.bn0 = nn.BatchNorm2d(in_channels)
+        #relu
+        self.conv1 = nn.Conv2d(in_channels, inner_channels, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(inner_channels)
+        #relu
+        self.basis_conv2 = nn.Conv2d(inner_channels, unique_rank, kernel_size=3, padding=1, bias=False)
+        self.basis_bn2 = nn.BatchNorm2d(self.total_rank)
+        self.coeff_conv2 = nn.Conv2d(self.total_rank, growth_rate, kernel_size=1, bias=False)
 
     def forward(self, x):
         out = F.relu(self.bn0(x),inplace=True)
-        out = F.relu(self.bn1(self.conv1(out),inplace=True)
+        out = F.relu(self.bn1(self.conv1(out)),inplace=True)
         out = torch.cat((self.basis_conv2(out),self.shared_basis(out)),dim=1)
         out = self.basis_bn2(out)
         out = self.coeff_conv2(out)
@@ -63,10 +74,10 @@ class DenseNet_Basis(nn.Module):
 
         self.features = nn.Sequential()
         
-        self.shared_basis_1 = nn.Conv2d(224, shared_rank, kernel_size=1, bias=False)
-        self.shared_basis_2 = nn.Conv2d(480, shared_rank*2, kernel_size=1, bias=False)
-        self.shared_basis_3 = nn.Conv2d(992, shared_rank*4, kernel_size=1, bias=False)
-        self.shared_basis_4 = nn.Conv2d(992, shared_rank*8, kernel_size=1, bias=False)
+        self.shared_basis_1 = nn.Conv2d(inner_channels*2, shared_rank, kernel_size=3, padding=1, bias=False)
+        self.shared_basis_2 = nn.Conv2d(inner_channels*2, shared_rank, kernel_size=3, padding=1, bias=False)
+        self.shared_basis_3 = nn.Conv2d(inner_channels*2, shared_rank, kernel_size=3, padding=1, bias=False)
+        self.shared_basis_4 = nn.Conv2d(inner_channels*2, shared_rank, kernel_size=3, padding=1, bias=False)
         
         for index in range(len(num_blocks) - 1):
             self.features.add_module("dense_block_layer_{}".format(index), self._make_dense_layers(block, inner_channels, num_blocks[index], unique_rank, getattr(self,"shared_basis_"+str(index+1))))
@@ -109,11 +120,11 @@ class DenseNet_Basis(nn.Module):
 #982
 #992
     
-def densenet121_Basis(num_classes, shared_rank, unique_rank):
-    return DenseNet_Basis(BottleNeck_Basis, [6,12,24,16], num_classes, shared_rank, unique_rank, growth_rate=32)
+def densenet121_Basis(shared_rank, unique_rank):
+    return DenseNet_Basis(BottleNeck_Basis, [6,12,24,16], 100, shared_rank, unique_rank, growth_rate=32)
 
-def densenet169_Basis(num_classes, shared_rank, unique_rank):
-    return DenseNet_Basis(BottleNeck_Basis, [6,12,32,32], num_classes, shared_rank, unique_rank, growth_rate=32)
+def densenet169_Basis(shared_rank, unique_rank):
+    return DenseNet_Basis(BottleNeck_Basis, [6,12,32,32], 100, shared_rank, unique_rank, growth_rate=32)
 
-def densenet201_Basis(num_classes, shared_rank, unique_rank):
-    return DenseNet_Basis(BottleNeck_Basis, [6,12,48,32], num_classes, shared_rank, unique_rank, growth_rate=32)
+def densenet201_Basis(shared_rank, unique_rank):
+    return DenseNet_Basis(BottleNeck_Basis, [6,12,48,32], 100, shared_rank, unique_rank, growth_rate=32)
