@@ -128,5 +128,5 @@ class ResNext_Basis(nn.Module):
         return out
 
 
-def ResNext50_32x4d_Basis(num_classes, shared_rank, unique_rank):
-    return ResNext_Basis(BottleNeck_Basis, BottleNeck, [3,4,6,3],num_classes,32,4,shared_rank,unique_rank)
+def ResNext50_32x4d_Basis(shared_rank, unique_rank):
+    return ResNext_Basis(BottleNeck_Basis, BottleNeck, [3,4,6,3],100,32,4,shared_rank,unique_rank)
