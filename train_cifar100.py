@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet56", help='ResNet20, ResNet32, Res
 args = parser.parse_args()
 
 from models.cifar100 import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis}
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Unique':resnet.ResNet34_Unique, 'ResNet34_Shared':resnet.ResNet34_Shared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -45,26 +45,21 @@ device='cuda'
 
 #args.visible_device sets which cuda devices to be used
 if 'Basis' in args.model:
-    net = dic_model[args.model](args.shared_rank, args.unique_rank)
+    net = dic_model[args.model](args.shared_rank, args.unique_rank
+elif 'Shared' in args.model:
+    net = dic_model[args.model](args.shared_rank)
+elif 'Unique' in args.model:
+    net = dic_model[args.model](args.unique_rank)
 else:
     net = dic_model[args.model]()
     
 net = net.to(device)
-
-if args.pretrained != None:
-    checkpoint = torch.load(args.pretrained)
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
                     
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
 #Training for standard models
 def train(epoch):
-    if epoch < args.starting_epoch:
-        return
-    
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -103,9 +98,6 @@ def train(epoch):
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
 def train_basis(epoch, include_unique_basis=False):
-    if epoch < args.starting_epoch:
-        return
-    
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -198,8 +190,6 @@ def train_basis(epoch, include_unique_basis=False):
         
 #Test for models
 def test(epoch):
-    if epoch < args.starting_epoch:
-        return
     global best_acc
     global best_acc_top5
     net.eval()
@@ -255,26 +245,17 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
-if 'Basis' in args.model:
+if 'Basis' in args.model or 'Shared' in args.model:
     func_train = train_basis
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-"""
-for i in range(300):
-    start = timeit.default_timer()
-    
-    adjust_learning_rate(optimizer, i+1, args.lr)
-    func_train(i+1)
-    test(i+1)
-    
-    stop = timeit.default_timer()
-    print('Time: ', stop - start)  
 
-print("Best_Acc_top1 = %.3f" % best_acc)
-print("Best_Acc_top5 = %.3f" % best_acc_top5)
-"""
-
-for i in range(150):
+if args.pretrained != None:
+    checkpoint = torch.load(args.pretrained)
+    net.load_state_dict(checkpoint['net_state_dict'])
+    best_acc = checkpoint['acc']
+                                
+for i in range(args.starting_epoch, 150):
     start = timeit.default_timer()
     func_train(i+1)
     test(i+1)
@@ -287,10 +268,9 @@ for i in range(150):
 checkpoint = torch.load('./checkpoint/' + 'CIFAR100-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
 net.load_state_dict(checkpoint['net_state_dict'])
 best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
-for i in range(75):
+for i in range(args.starting_epoch, 75):
     start = timeit.default_timer()
     func_train(i+151)
     test(i+151)
@@ -303,10 +283,9 @@ for i in range(75):
 checkpoint = torch.load('./checkpoint/' + 'CIFAR100-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
 net.load_state_dict(checkpoint['net_state_dict'])
 best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
-for i in range(75):
+for i in range(args.starting_epoch, 75):
     start = timeit.default_timer()
     func_train(i+226)
     test(i+226)
