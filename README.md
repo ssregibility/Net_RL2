@@ -1,10 +1,6 @@
-> A template README.md for code accompanying a Machine Learning paper
-
 # My Paper Title
 
 This repository is the official implementation of [My Paper Title](https://arxiv.org/abs/2030.12345). 
-
-> Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials
 
 ## Requirements
 
@@ -14,8 +10,6 @@ To install requirements:
 pip install -r requirements.txt
 ```
 
-> Describe how to set up the environment, e.g. pip/conda/docker commands, download datasets, etc...
-
 ## Training
 
 To train the model(s) in the paper, run this command:
@@ -23,8 +17,6 @@ To train the model(s) in the paper, run this command:
 ```train
 python train.py --input-data <path_to_data> --alpha 10 --beta 20
 ```
-
-> Describe how to train the models, with example commands on how to train the models in your paper, including the full training procedure and appropriate hyperparameters.
 
 ## Evaluation
 
@@ -34,15 +26,35 @@ To evaluate my model on ImageNet, run:
 python eval.py --model-file mymodel.pth --benchmark imagenet
 ```
 
-> Describe how to evaluate the trained models on benchmarks reported in the paper, give commands that produce the results (section below).
-
 ## Pre-trained Models
 
-You can download pretrained models here:
+Pre-trained models are included in following directory:
+./pretrained
 
-- [My awesome model](https://drive.google.com/mymodel.pth) trained on ImageNet using parameters x,y,z. 
+> CIFAR100
 
-> Give a link to where/how the pretrained models can be downloaded and how they were trained (if applicable).  Alternatively you can have an additional column in your results table with a link to the models.
+- [CIFAR100_ResNet34_S8U1_23.11err.pth] trained on CIFAR100, ResNet34-S8U1.
+- [CIFAR100_ResNet34_S16U1_22.64err.pth] trained on CIFAR100, ResNet34-S16U1.
+- [CIFAR100_ResNet34_S32U1_21.79err.pth] trained on CIFAR100, ResNet34-S32U1.
+- [CIFAR100_ResNet34_S16U0_23.43err.pth] trained on CIFAR100, ResNet34-S16U0.
+- [CIFAR100_ResNet34_S32U0_22.32err.pth] trained on CIFAR100, ResNet34-S32U0.
+- [CIFAR100_DenseNet121_S64U4_22.15err.pth] trained on CIFAR100, DenseNet121-S64U4.
+
+> CIFAR10
+
+- [CIFAR10_ResNet32_Double_S16U1_6.93err.pth] trained on CIFAR10, ResNet32-S16U1\*.
+- [CIFAR10_ResNet56_Double_S16U1_6.30err.pth] trained on CIFAR10, ResNet56-S16U1\*.
+- [CIFAR10_ResNet34_S8U1_8.08err.pth] trained on CIFAR10, ResNet34-S8U1.
+- [CIFAR10_ResNet34_S16U1_7.43err.pth] trained on CIFAR10, ResNet34-S16U1.
+- [CIFAR10_ResNet56_S8U1_7.52err.pth.pth] trained on CIFAR10, ResNet56-S8U1.
+- [CIFAR10_ResNet56_S16U1_7.46err.pth.pth] trained on CIFAR10, ResNet56-S16U1.
+
+> ILSVRC2012
+
+- [ILSVRC_ResNet34_Double_S32U1_27.69err.pth] trained on ILSVRC2012, ResNet34-S32U1\*.
+- [ILSVRC_ResNet34_S32U1_28.42err.pth] trained on ILSVRC2012, ResNet34-S32U1.
+- [ILSVRC_ResNet34_S48U1_27.88err.pth] trained on ILSVRC2012, ResNet34-S48U1.
+
 
 ## Results
 
@@ -54,9 +66,4 @@ Our model achieves the following performance on :
 | ------------------ |---------------- | -------------- |
 | My awesome model   |     85%         |      95%       |
 
-> Include a table of results from your paper, and link back to the leaderboard for clarity and context. If your main result is a figure, include that figure and link to the command or notebook to reproduce it. 
-
-
 ## Contributing
-
-> Pick a licence and describe how to contribute to your code repository. 
