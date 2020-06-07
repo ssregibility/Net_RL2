@@ -45,7 +45,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
 if 'Basis' in args.model:
-    net = dic_model[args.model](args.shared_rank, args.unique_rank
+    net = dic_model[args.model](args.shared_rank, args.unique_rank)
 elif 'Shared' in args.model:
     net = dic_model[args.model](args.shared_rank)
 elif 'Unique' in args.model:
