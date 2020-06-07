@@ -43,6 +43,7 @@ class BasicBlock_Unique(nn.Module):
             if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
+                LambdaLayer implementation is imported from https://github.com/akamaster/pytorch_resnet_cifar10/
                 """
                 self.shortcut = LambdaLayer(lambda x:
                                             F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
@@ -99,6 +100,7 @@ class BasicBlock_Shared(nn.Module):
             if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
+                LambdaLayer implementation is imported from https://github.com/akamaster/pytorch_resnet_cifar10/
                 """
                 self.shortcut = LambdaLayer(lambda x:
                                             F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
@@ -156,6 +158,7 @@ class BasicBlock_Single(nn.Module):
             if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
+                LambdaLayer implementation is imported from https://github.com/akamaster/pytorch_resnet_cifar10/
                 """
                 self.shortcut = LambdaLayer(lambda x:
                                             F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
@@ -215,6 +218,7 @@ class BasicBlock_Basis(nn.Module):
             if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
+                LambdaLayer implementation is imported from https://github.com/akamaster/pytorch_resnet_cifar10/
                 """
                 self.shortcut = LambdaLayer(lambda x:
                                             F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
@@ -260,6 +264,7 @@ class BasicBlock(nn.Module):
             if option == 'A':
                 """
                 For CIFAR10 ResNet paper uses option A.
+                LambdaLayer implementation is imported from https://github.com/akamaster/pytorch_resnet_cifar10/
                 """
                 self.shortcut = LambdaLayer(lambda x:
                                             F.pad(x[:, :, ::2, ::2], (0, 0, 0, 0, planes//4, planes//4), "constant", 0))
