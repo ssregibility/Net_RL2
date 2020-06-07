@@ -102,7 +102,7 @@ def train(epoch):
 # Training for parameter shraed models
 # Use the property of orthogonal matrices;
 # e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch, include_unique_basis=True):
+def train_basis(epoch, include_unique_basis=False):
     if epoch < args.starting_epoch:
         return
     
