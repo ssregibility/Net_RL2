@@ -52,7 +52,7 @@ python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=<model_to_evaluate> 
 
 ## Pre-trained Models
 
-Pre-trained models are included in following directory:
+Every pre-trained models except for ResNext50-S64U4 are included in following directory:
 ./pretrained
 
 > CIFAR100
