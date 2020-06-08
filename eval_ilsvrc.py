@@ -19,7 +19,7 @@ parser.add_argument('--shared_rank', default=32, type=int, help='Number of share
 parser.add_argument('--unique_rank', default=1, type=int, help='Number of unique base')
 parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
-parser.add_argument('--pretrained', default="./pretrained/ILSVRC_ResNet34_Double_S32U1_27.69err.pth", help='Path of a pretrained model file')
+parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
 parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared')
 args = parser.parse_args()

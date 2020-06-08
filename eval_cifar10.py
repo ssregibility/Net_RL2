@@ -19,7 +19,7 @@ parser.add_argument('--shared_rank', default=16, type=int, help='Number of share
 parser.add_argument('--unique_rank', default=1, type=int, help='Number of unique base')
 parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
-parser.add_argument('--pretrained', default="./pretrained/CIFAR10_ResNet56_Double_S16U1_6.30err.pth", help='Path of a pretrained model file')
+parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="./data/", help='A path to dataset directory')
 parser.add_argument('--model', default="ResNet56_DoubleShared", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNet1202, ResNet56_DoubleShared, ResNet32_DoubleShared, ResNet56_SingleShared, ResNet32_SingleShared, ResNet56_SharedOnly, ResNet32_SharedOnly, ResNet56_NonShared, ResNet32_NonShared')
 args = parser.parse_args()
