@@ -120,7 +120,6 @@ def train_basis(epoch):
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 5):  # ResNet has 4 groups
-            layer = getattr(net, "layer"+str(gid))
             shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
             shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
 
@@ -128,11 +127,6 @@ def train_basis(epoch):
             num_all_basis = num_shared_basis 
 
             all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
-            if (include_unique_basis == True):  
-                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
-                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
-                for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
 
             B = torch.cat(all_basis).view(num_all_basis, -1)
             #print("B size:", B.shape)
@@ -145,24 +139,8 @@ def train_basis(epoch):
             
             #print("D size:", D.shape)
          
-            if (include_unique_basis == True):  
-                # orthogonalities btwn shared<->(shared/unique)
-                sim += torch.sum(D[0:num_shared_basis,:])  
-                cnt_sim += num_shared_basis*num_all_basis
-
-                # orthogonalities btwn unique<->unique in the same layer
-                for i in range(1, len(layer)):
-                    for j in range(2):  # conv1 & conv2
-                         idx_base = num_shared_basis   \
-                          + (i-1) * (num_unique_basis) * 2 \
-                          + num_unique_basis * j 
-                         sim += torch.sum(\
-                                 D[idx_base:idx_base + num_unique_basis, \
-                                 idx_base:idx_base+num_unique_basis])
-                         cnt_sim += num_unique_basis ** 2 
-            else: # orthogonalities only btwn shared basis
-                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-                cnt_sim += num_shared_basis**2
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
 
         #average similarity
         avg_sim = sim / cnt_sim
@@ -213,7 +191,6 @@ def train_basis_single(epoch):
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 5):  # ResNet has 4 groups
-            layer = getattr(net, "layer"+str(gid))
             shared_basis = getattr(net,"shared_basis_"+str(gid))
 
             num_shared_basis = shared_basis.weight.shape[0]
