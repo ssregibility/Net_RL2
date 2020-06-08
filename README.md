@@ -62,7 +62,8 @@ Pre-trained models are included in following directory:
 - **CIFAR100_ResNet34_S32U1_21.79err.pth** trained on CIFAR100, ResNet34-S32U1.
 - **CIFAR100_ResNet34_S16U0_23.43err.pth** trained on CIFAR100, ResNet34-S16U0.
 - **CIFAR100_ResNet34_S32U0_22.32err.pth** trained on CIFAR100, ResNet34-S32U0.
-- **CIFAR100_DenseNet121_S64U4_22.15err.pth** trained on CIFAR100, DenseNet121-S64U4.
+- **CIFAR100_DenseNet121_S16U1_22.15err.pth** trained on CIFAR100, DenseNet121-S16U1.
+- **[CIFAR100_ResNext50_S64U4_20.09err.pth](https://place.holder)** trained on CIFAR100, ResNeXt50-S64U4.
 
 > CIFAR10
 
