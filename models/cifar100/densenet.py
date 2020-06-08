@@ -36,7 +36,7 @@ class BottleNeck(nn.Module):
         return torch.cat([x, self.residual_function(x)], 1)
     
 #Bottleneck for proposed models
-class BottleNeck_Basis(nn.Module):
+class BottleNeck_SingleShared(nn.Module):
     expansion = 4
     
     def __init__(self, in_channels, growth_rate, unique_rank, shared_basis):
@@ -122,7 +122,7 @@ class DenseNet(nn.Module):
         return dense_block
     
 #DesneNet-BC with basis sharing
-class DenseNet_Basis(nn.Module):
+class DenseNet_SingleShared(nn.Module):
     def __init__(self, block, num_blocks, num_classes, shared_rank, unique_rank, growth_rate=12, reduction=0.5):
         super().__init__()
         self.growth_rate = growth_rate
@@ -180,17 +180,22 @@ class DenseNet_Basis(nn.Module):
             in_channels += self.growth_rate
         return dense_block
 
+#Original DenseNet
 def DenseNet121():
     return DenseNet(BottleNeck, [6,12,24,16], 100, growth_rate=32)
 
+#Original DenseNet
 def DenseNet169():
     return DenseNet(BottleNeck, [6,12,32,32], 100, growth_rate=32)
 
+#Original DenseNet
 def DenseNet201():
     return DenseNet(BottleNeck, [6,12,48,32], 100, growth_rate=32)
 
+#Original DenseNet
 def DenseNet161():
     return DenseNet(BottleNeck, [6,12,36,24], 100, growth_rate=48)
 
-def DenseNet121_Basis(shared_rank, unique_rank):
-    return DenseNet_Basis(BottleNeck_Basis, [6,12,24,16], 100, shared_rank, unique_rank, growth_rate=32)
+#A model with a shared basis in each residual block group.
+def DenseNet121_SingleShared(shared_rank, unique_rank):
+    return DenseNet_SingleShared(BottleNeck_SingleShared, [6,12,24,16], 100, shared_rank, unique_rank, growth_rate=32)

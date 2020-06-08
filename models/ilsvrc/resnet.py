@@ -7,11 +7,11 @@ from torch.autograd import Variable
 import copy
 
 #BasicBlock for single basis models
-class BasicBlock_Single(nn.Module):
+class BasicBlock_SingleShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1):
-        super(BasicBlock_Single, self).__init__()
+        super(BasicBlock_SingleShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis = shared_basis
@@ -57,11 +57,11 @@ class BasicBlock_Single(nn.Module):
         return out
 
 #BaiscBlock for double basis models
-class BasicBlock_Basis(nn.Module):
+class BasicBlock_DoubleShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1):
-        super(BasicBlock_Basis, self).__init__()
+        super(BasicBlock_DoubleShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis_1 = shared_basis_1
@@ -141,9 +141,9 @@ class BasicBlock(nn.Module):
         return out
     
 #Proposed resnet (single basis)
-class ResNet_Single(nn.Module):
+class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
-        super(ResNet_Single, self).__init__()
+        super(ResNet_SingleShared, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -208,9 +208,9 @@ class ResNet_Single(nn.Module):
         return out
     
 #Proposed resnet (double basis)
-class ResNet_Basis(nn.Module):
+class ResNet_DoubleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
-        super(ResNet_Basis, self).__init__()
+        super(ResNet_DoubleShared, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -343,14 +343,18 @@ class ResNet(nn.Module):
      
         return out
 
+#Original ResNet
 def ResNet18():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
+#Original ResNet
 def ResNet34():
     return ResNet(BasicBlock, [3, 4, 6, 3])
 
-def ResNet34_Basis(shared_rank, unique_rank):
-    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
+#A model with 2 shared bases in each residual block group.
+def ResNet34_DoubleShared(shared_rank, unique_rank):
+    return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
 
-def ResNet34_Single(shared_rank, unique_rank):
-    return ResNet_Single(BasicBlock_Single, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
+#A model with a shared basis in each residual block group.
+def ResNet34_SingleShared(shared_rank, unique_rank):
+    return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)

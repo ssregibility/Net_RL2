@@ -21,11 +21,11 @@ parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--pretrained', default="./pretrained/CIFAR100_ResNet34_S16U1_22.64err.pth", help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="./data/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_Basis", help='ResNet18, ResNet34, ResNet34_Basis, ResNet34_Unique, ResNet34_Shared, DenseNet121, DenseNet121_Basis, ResNext50, ResNext50_Basis')
+parser.add_argument('--model', default="ResNet34_SingleShared", help='ResNet18, ResNet34, ResNet34_SingleShared, ResNet34_NonShared, ResNet34_SharedOnly, DenseNet121, DenseNet121_SingleShared, ResNext50, ResNext50_SingleShared')
 args = parser.parse_args()
 
 from models.cifar100 import resnet, densenet, resnext
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Unique':resnet.ResNet34_Unique, 'ResNet34_Shared':resnet.ResNet34_Shared, 'DenseNet121':densenet.DenseNet121, 'DenseNet121_Basis':densenet.DenseNet121_Basis, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext50_Basis':resnext.ResNext50_32x4d_Basis}
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared, 'ResNet34_NonShared':resnet.ResNet34_NonShared, 'ResNet34_SharedOnly':resnet.ResNet34_SharedOnly, 'DenseNet121':densenet.DenseNet121, 'DenseNet121_SingleShared':densenet.DenseNet121_SingleShared, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -38,11 +38,11 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-if 'Basis' in args.model:
+if 'SingleShared' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
-elif 'Shared' in args.model:
+elif 'SharedOnly' in args.model:
     net = dic_model[args.model](args.shared_rank)
-elif 'Unique' in args.model:
+elif 'NonShared' in args.model:
     net = dic_model[args.model](args.unique_rank)
 else:
     net = dic_model[args.model]()

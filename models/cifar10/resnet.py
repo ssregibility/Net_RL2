@@ -15,11 +15,11 @@ class LambdaLayer(nn.Module):
         return self.lambd(x)
     
 #BasicBlock for models with unique basis only
-class BasicBlock_Unique(nn.Module):
+class BasicBlock_NonShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, stride=1, option='A'):
-        super(BasicBlock_Unique, self).__init__()
+        super(BasicBlock_NonShared, self).__init__()
         
         self.unique_rank = unique_rank
         
@@ -73,11 +73,11 @@ class BasicBlock_Unique(nn.Module):
         return out
     
 #BasicBlock for models with shared basis only
-class BasicBlock_Shared(nn.Module):
+class BasicBlock_SharedOnly(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, shared_basis_1, shared_basis_2, stride=1, option='A'):
-        super(BasicBlock_Shared, self).__init__()
+        super(BasicBlock_SharedOnly, self).__init__()
         
         self.shared_basis_1 = shared_basis_1
         self.shared_basis_2 = shared_basis_2
@@ -130,11 +130,11 @@ class BasicBlock_Shared(nn.Module):
         return out
     
 #BasicBlock for single basis models
-class BasicBlock_Single(nn.Module):
+class BasicBlock_SingleShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1, option='A'):
-        super(BasicBlock_Single, self).__init__()
+        super(BasicBlock_SingleShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis = shared_basis
@@ -188,11 +188,11 @@ class BasicBlock_Single(nn.Module):
         return out
     
 #BasicBlock for double basis models (proposed models)
-class BasicBlock_Basis(nn.Module):
+class BasicBlock_DoubleShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis_1, shared_basis_2, stride=1, option='A'):
-        super(BasicBlock_Basis, self).__init__()
+        super(BasicBlock_DoubleShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis_1 = shared_basis_1
@@ -288,9 +288,9 @@ class BasicBlock(nn.Module):
         return out
     
 #ResNet for unique basis only models
-class ResNet_Unique(nn.Module):
+class ResNet_NonShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, unique_rank, num_classes=10):
-        super(ResNet_Unique, self).__init__()
+        super(ResNet_NonShared, self).__init__()
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -351,9 +351,9 @@ class ResNet_Unique(nn.Module):
         return x
     
 #ResNet for shared basis only models
-class ResNet_Shared(nn.Module):
+class ResNet_SharedOnly(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, num_classes=10):
-        super(ResNet_Shared, self).__init__()
+        super(ResNet_SharedOnly, self).__init__()
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -442,9 +442,9 @@ class ResNet_Shared(nn.Module):
         return x
     
 #ResNet for single basis only models
-class ResNet_Single(nn.Module):
+class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
-        super(ResNet_Single, self).__init__()
+        super(ResNet_SingleShared, self).__init__()
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -515,9 +515,9 @@ class ResNet_Single(nn.Module):
         return x
     
 #ResNet for proposed models
-class ResNet_Basis(nn.Module):
+class ResNet_DoubleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
-        super(ResNet_Basis, self).__init__()
+        super(ResNet_DoubleShared, self).__init__()
         self.in_planes = 16
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -652,44 +652,58 @@ class ResNet(nn.Module):
      
         return x
 
+#Original ResNet
 def ResNet20():
     return ResNet(BasicBlock, [3, 3, 3])
 
+#Original ResNet
 def ResNet32():
     return ResNet(BasicBlock, [5, 5, 5])
 
+#Original ResNet
 def ResNet44():
     return ResNet(BasicBlock, [7, 7, 7])
 
+#Original ResNet
 def ResNet56():
     return ResNet(BasicBlock, [9, 9, 9])
 
+#Original ResNet
 def ResNet110():
     return ResNet(BasicBlock, [18, 18, 18])
 
+#Original ResNet
 def ResNet1202():
     return ResNet(BasicBlock, [200, 200, 200])
 
-def ResNet56_Basis(shared_rank, unique_rank):
-    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
+#A model with 2 shared bases in each residual block group.
+def ResNet56_DoubleShared(shared_rank, unique_rank):
+    return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
 
-def ResNet32_Basis(shared_rank, unique_rank):
-    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
+#A model with 2 shared bases in each residual block group.
+def ResNet32_DoubleShared(shared_rank, unique_rank):
+    return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
-def ResNet56_Single(shared_rank, unique_rank):
-    return ResNet_Single(BasicBlock_Single, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
+#A model with a shared basis in each residual block group.
+def ResNet56_SingleShared(shared_rank, unique_rank):
+    return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
 
-def ResNet32_Single(shared_rank, unique_rank):
-    return ResNet_Single(BasicBlock_Single, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
+#A model with a shared basis in each residual block group.
+def ResNet32_SingleShared(shared_rank, unique_rank):
+    return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
-def ResNet56_Shared(shared_rank):
-    return ResNet_Shared(BasicBlock_Shared, BasicBlock, [9, 9, 9], shared_rank)
+#A model with a shared basis in each residual block group, without any unique basis.
+def ResNet56_SharedOnly(shared_rank):
+    return ResNet_SharedOnly(BasicBlock_SharedOnly, BasicBlock, [9, 9, 9], shared_rank)
 
-def ResNet32_Shared(shared_rank):
-    return ResNet_Shared(BasicBlock_Shared, BasicBlock, [5, 5, 5], shared_rank)
+#A model with a shared basis in each residual block group, without any unique basis.
+def ResNet32_SharedOnly(shared_rank):
+    return ResNet_SharedOnly(BasicBlock_SharedOnly, BasicBlock, [5, 5, 5], shared_rank)
 
-def ResNet56_Unique(unique_rank):
-    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [9, 9, 9], unique_rank)
+#A model without shared basis in each residual block group. only unique base are in the block.
+def ResNet56_NonShared(unique_rank):
+    return ResNet_NonShared(BasicBlock_NonShared, BasicBlock, [9, 9, 9], unique_rank)
 
-def ResNet32_Unique(unique_rank):
-    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [5, 5, 5], unique_rank)
+#A model without shared basis in each residual block group. only unique base are in the block.
+def ResNet32_NonShared(unique_rank):
+    return ResNet_NonShared(BasicBlock_NonShared, BasicBlock, [5, 5, 5], unique_rank)
