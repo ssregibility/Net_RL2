@@ -14,7 +14,7 @@ import utils
 import timeit
 
 #Possible arguments
-parser = argparse.ArgumentParser(description='TODO')
+parser = argparse.ArgumentParser(description='Following arguments are used for the script')
 parser.add_argument('--lr', default=0.1, type=float, help='Learning Rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='Momentum')
 parser.add_argument('--weight_decay', default=1e-4, type=float, help='Weight decay')
