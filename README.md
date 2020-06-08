@@ -110,6 +110,8 @@ Our model achieves the following performance on :
 | ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.30G  |
 | ResNet56-S16U1\*    |     6.30%         |      0.31M     |  0.30G  |
 
+\* denotes having 2 shared bases in each residual block group.
+
 ### ILSVRC2012 Classifcation
 
 | Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |
@@ -117,6 +119,8 @@ Our model achieves the following performance on :
 | ResNet34-S32U1     |     28.42%         |      9.55%       |      8.20M     |  4.98G  |
 | ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  |
 | ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  |
+
+\* denotes having 2 shared bases in each residual block group.
 
 ## Contributing
 
