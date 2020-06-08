@@ -84,7 +84,7 @@ Every pre-trained models except for ResNext50-S64U4 are included in following di
 ## Results
 
 Following graphs are comparison between original [ResNets](https://arxiv.org/abs/1512.03385) and ResNet34s using the proposed method :
-![Image](./images/graph.png)
+![Image](https://github.com/ssregibility/Net_RL2/blob/master/images/graphs.png?raw=true)
 
 
 Our model achieves the following performance on :
