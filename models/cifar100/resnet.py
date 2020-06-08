@@ -5,11 +5,11 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 #BasicBlock for unique basis only models
-class BasicBlock_Unique(nn.Module):
+class BasicBlock_NonShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, stride=1):
-        super(BasicBlock_Unique, self).__init__()
+        super(BasicBlock_NonShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.total_rank = unique_rank
@@ -53,11 +53,11 @@ class BasicBlock_Unique(nn.Module):
         return out
 
 #BasicBlock for shared basis only models
-class BasicBlock_Shared(nn.Module):
+class BasicBlock_SharedOnly(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, shared_basis, stride=1):
-        super(BasicBlock_Shared, self).__init__()
+        super(BasicBlock_SharedOnly, self).__init__()
         
         self.shared_basis = shared_basis
         
@@ -100,11 +100,11 @@ class BasicBlock_Shared(nn.Module):
         return out
 
 #BasicBlock for proposed models
-class BasicBlock_Basis(nn.Module):
+class BasicBlock_SingleShared(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, unique_rank, shared_basis, stride=1):
-        super(BasicBlock_Basis, self).__init__()
+        super(BasicBlock_SingleShared, self).__init__()
         
         self.unique_rank = unique_rank
         self.shared_basis = shared_basis
@@ -182,9 +182,9 @@ class BasicBlock(nn.Module):
         return out
     
 #ResNet for unique basis only models
-class ResNet_Unique(nn.Module):
+class ResNet_NonShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, unique_rank, num_classes=100):
-        super(ResNet_Unique, self).__init__()
+        super(ResNet_NonShared, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -234,9 +234,9 @@ class ResNet_Unique(nn.Module):
         return x
     
 #ResNet for shared basis only models
-class ResNet_Shared(nn.Module):
+class ResNet_SharedOnly(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, num_classes=100):
-        super(ResNet_Shared, self).__init__()
+        super(ResNet_SharedOnly, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -299,9 +299,9 @@ class ResNet_Shared(nn.Module):
         return x
     
 #ResNet for proposed models
-class ResNet_Basis(nn.Module):
+class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=100):
-        super(ResNet_Basis, self).__init__()
+        super(ResNet_SingleShared, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -411,18 +411,23 @@ class ResNet(nn.Module):
         x = self.fc(x)
      
         return x
-
+    
+#Original ResNet
 def ResNet18():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
+#Original ResNet
 def ResNet34():
     return ResNet(BasicBlock, [3, 4, 6, 3])
 
-def ResNet34_Basis(shared_rank, unique_rank):
-    return ResNet_Basis(BasicBlock_Basis, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
+#A model with a shared basis in each residual block group.
+def ResNet34_SingleShared(shared_rank, unique_rank):
+    return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
 
-def ResNet34_Shared(shared_rank):
-    return ResNet_Shared(BasicBlock_Shared, BasicBlock, [3, 4, 6, 3], shared_rank)
+#A model with a shared basis in each residual block group, without any unique basis.
+def ResNet34_SharedOnly(shared_rank):
+    return ResNet_SharedOnly(BasicBlock_SharedOnly, BasicBlock, [3, 4, 6, 3], shared_rank)
 
-def ResNet34_Unique(unique_rank):
-    return ResNet_Unique(BasicBlock_Unique, BasicBlock, [3, 4, 6, 3], unique_rank)
+#A model without shared basis in each residual block group. only unique base are in the block.
+def ResNet34_NonShared(unique_rank):
+    return ResNet_NonShared(BasicBlock_NonShared, BasicBlock, [3, 4, 6, 3], unique_rank)

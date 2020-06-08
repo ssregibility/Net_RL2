@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 #BottleNeck for proposed models
-class BottleNeck_Basis(nn.Module):
+class BottleNeck_SingleShared(nn.Module):
     expansion = 4
     
     def __init__(self, in_channels, out_channels, groups, base_width, unique_rank, shared_basis, stride=1):
@@ -72,9 +72,9 @@ class BottleNeck(nn.Module):
         return nn.ReLU(inplace=True)(self.residual_function(x) + self.shortcut(x))
 
 #ResNext for basis shared models
-class ResNext_Basis(nn.Module):
+class ResNext_SingleShared(nn.Module):
     def __init__(self, block, block_without_basis, num_blocks, num_classes, groups, base_width, shared_rank,unique_rank):
-        super(ResNext_Basis, self).__init__()
+        super(ResNext_SingleShared, self).__init__()
         self.in_planes = 64
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -162,11 +162,14 @@ class ResNext(nn.Module):
         out = self.linear(out)
         return out
 
+#Original ResNext
 def ResNext50_32x4d(c):
     return ResNext(BottleNeck, [3,4,6,3],c,32,4)
 
+#Original ResNext
 def ResNext101_32x8d(c):
     return ResNext(BottleNeck, [3,4,23,3],c,32,8)
 
-def ResNext50_32x4d_Basis(shared_rank, unique_rank):
-    return ResNext_Basis(BottleNeck_Basis, BottleNeck, [3,4,6,3],100,32,4,shared_rank,unique_rank)
+#A model with a shared basis in each residual block group.
+def ResNext50_32x4d_SingleShared(shared_rank, unique_rank):
+    return ResNext_SingleShared(BottleNeck_SingleShared, BottleNeck, [3,4,6,3],100,32,4,shared_rank,unique_rank)

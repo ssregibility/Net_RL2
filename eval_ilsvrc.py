@@ -21,11 +21,11 @@ parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--pretrained', default="./pretrained/ILSVRC_ResNet34_Double_S32U1_27.69err.pth", help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_Basis", help='ResNet18, ResNet34, ResNet34_Basis, ResNet34_Single')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared')
 args = parser.parse_args()
 
 from models.ilsvrc import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_Basis':resnet.ResNet34_Basis, 'ResNet34_Single':resnet.ResNet34_Single}
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -38,7 +38,7 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-if 'Basis' in args.model or 'Single' in args.model:
+if 'DoubleShared' in args.model or 'SingleShared' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
 else:
     net = dic_model[args.model]()

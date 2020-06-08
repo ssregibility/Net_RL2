@@ -26,11 +26,11 @@ parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES'
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
 parser.add_argument('--dataset_path', default="./data/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet56_Basis", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNet1202, ResNet56_Basis, ResNet32_Basis, ResNet56_Single, ResNet32_Single, ResNet56_Shared, ResNet32_Shared, ResNet56_Unique, ResNet32_Unique')
+parser.add_argument('--model', default="ResNet56_DoubleShared", help='ResNet20, ResNet32, ResNet44, ResNet56, ResNet110, ResNet1202, ResNet56_DoubleShared, ResNet32_DoubleShared, ResNet56_SingleShared, ResNet32_SingleShared, ResNet56_SharedOnly, ResNet32_SharedOnly, ResNet56_NonShared, ResNet32_NonShared')
 args = parser.parse_args()
 
 from models.cifar10 import resnet
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_Basis':resnet.ResNet56_Basis, 'ResNet32_Basis':resnet.ResNet32_Basis, 'ResNet56_Single':resnet.ResNet56_Single, 'ResNet32_Single':resnet.ResNet32_Single, 'ResNet56_Shared':resnet.ResNet56_Shared, 'ResNet32_Shared':resnet.ResNet32_Shared, 'ResNet56_Unique':resnet.ResNet56_Unique, 'ResNet32_Unique':resnet.ResNet32_Unique}
+dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_DoubleShared':resnet.ResNet56_DoubleShared, 'ResNet32_DoubleShared':resnet.ResNet32_DoubleShared, 'ResNet56_SingleShared':resnet.ResNet56_SingleShared, 'ResNet32_SingleShared':resnet.ResNet32_SingleShared, 'ResNet56_SharedOnly':resnet.ResNet56_SharedOnly, 'ResNet32_SharedOnly':resnet.ResNet32_SharedOnly, 'ResNet56_NonShared':resnet.ResNet56_NonShared, 'ResNet32_NonShared':resnet.ResNet32_NonShared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -44,11 +44,11 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]=args.visible_device
 device='cuda'
 
-if 'Basis' in args.model or 'Single' in args.model:
+if 'DoubleShared' in args.model or 'SingleShared' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
-elif 'Shared' in args.model:
+elif 'SharedOnly' in args.model:
     net = dic_model[args.model](args.shared_rank)
-elif 'Unique' in args.model:
+elif 'NonShared' in args.model:
     net = dic_model[args.model](args.unique_rank)
 else:
     net = dic_model[args.model]()
@@ -349,9 +349,9 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
-if 'Basis' in args.model or 'Shared' in args.model:
+if 'DoubleShared' in args.model or 'SharedOnly' in args.model:
     func_train = train_basis
-elif 'Single' in args.model:
+elif 'SingleShared' in args.model:
     func_train = train_basis_single
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)

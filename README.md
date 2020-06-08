@@ -15,19 +15,19 @@ pip3 install -r requirements.txt
 To train the models in the paper on CIFAR-10, run this command:
 
 ```train
-python3 train_cifar10.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --model=ResNet56_Basis
+python3 train_cifar10.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --model=ResNet56_DoubleShared
 ```
 
 To train the models in the paper on CIFAR-100, run this command:
 
 ```train
-python3 train_cifar100.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --model=ResNet34_Basis
+python3 train_cifar100.py --lr=0.1 --momentum=0.9 --weight_decay=5e-4 --lambdaR=10 --shared_rank=16 --unique_rank=1 --batch_size=256 --model=ResNet34_SingleShared
 ```
 
 To train the models in the paper on ILSVRC2012, run this command:
 
 ```train
-python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --shared_rank=32 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_Basis
+python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --shared_rank=32 --unique_rank=1 --batch_size=256 --dataset_path=<path_to_dataset> --model=ResNet34_DoubleShared
 ```
 
 ## Evaluation
@@ -52,33 +52,30 @@ python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=<model_to_evaluate> 
 
 ## Pre-trained Models
 
-Every pre-trained models except for ResNext50-S64U4 are included in following directory:
-./pretrained
+Following files are pre-trained models trained using the proposed method:
 
 > CIFAR100
 
-- **CIFAR100_ResNet34_S8U1_23.11err.pth** trained on CIFAR100, ResNet34-S8U1.
-- **CIFAR100_ResNet34_S16U1_22.64err.pth** trained on CIFAR100, ResNet34-S16U1.
-- **CIFAR100_ResNet34_S32U1_21.79err.pth** trained on CIFAR100, ResNet34-S32U1.
-- **CIFAR100_ResNet34_S16U0_23.43err.pth** trained on CIFAR100, ResNet34-S16U0.
-- **CIFAR100_ResNet34_S32U0_22.32err.pth** trained on CIFAR100, ResNet34-S32U0.
-- **CIFAR100_DenseNet121_S16U1_22.15err.pth** trained on CIFAR100, DenseNet121-S16U1.
-- **[CIFAR100_ResNext50_S64U4_20.09err.pth](https://place.holder)** trained on CIFAR100, ResNeXt50-S64U4.
+- **[CIFAR100_ResNet34_SingleShared_S8U1_23.11err.pth](place.holder)** trained on CIFAR100, ResNet34-S8U1.
+- **[CIFAR100_ResNet34_SingleShared_S16U1_22.64err.pth](place.holder)** trained on CIFAR100, ResNet34-S16U1.
+- **[CIFAR100_ResNet34_SingleShared_S32U1_21.79err.pth](place.holder)** trained on CIFAR100, ResNet34-S32U1.
+- **[C[FAR100_DenseNet121_SingleShared_S16U1_22.15err.pth](place.holder)** trained on CIFAR100, DenseNet121-S16U1.
+- **[CIFAR100_ResNext50_SingleShared_S64U4_20.09err.pth](https://drive.google.com/file/d/1nLWETVMwZbGXQ8Ta6vtaYI5SuedUcMAm/view?usp=sharing)** trained on CIFAR100, ResNeXt50-S64U4.
 
 > CIFAR10
 
-- **CIFAR10_ResNet32_Double_S16U1_6.93err.pth** trained on CIFAR10, ResNet32-S16U1\*.
-- **CIFAR10_ResNet56_Double_S16U1_6.30err.pth** trained on CIFAR10, ResNet56-S16U1\*.
-- **CIFAR10_ResNet32_S8U1_8.08err.pth** trained on CIFAR10, ResNet34-S8U1.
-- **CIFAR10_ResNet32_S16U1_7.43err.pth** trained on CIFAR10, ResNet34-S16U1.
-- **CIFAR10_ResNet56_S8U1_7.52err.pth.pth** trained on CIFAR10, ResNet56-S8U1.
-- **CIFAR10_ResNet56_S16U1_7.46err.pth.pth** trained on CIFAR10, ResNet56-S16U1.
+- **[CIFAR10_ResNet32_DoubleShared_S16U1_6.93err.pth](place.holder)** trained on CIFAR10, ResNet32-S16U1\*.
+- **[CIFAR10_ResNet56_DoubleShared_S16U1_6.30err.pth](place.holder)** trained on CIFAR10, ResNet56-S16U1\*.
+- **[CIFAR10_ResNet32_SingleShared_S8U1_8.08err.pth](place.holder)** trained on CIFAR10, ResNet34-S8U1.
+- **[CIFAR10_ResNet32_SingleShared_S16U1_7.43err.pth](place.holder)** trained on CIFAR10, ResNet34-S16U1.
+- **[CIFAR10_ResNet56_SingleShared_S8U1_7.52err.pth.pth](place.holder)** trained on CIFAR10, ResNet56-S8U1.
+- **[CIFAR10_ResNet56_SingleShared_S16U1_7.46err.pth.pth](place.holder)** trained on CIFAR10, ResNet56-S16U1.
 
 > ILSVRC2012
 
-- **ILSVRC_ResNet34_Double_S32U1_27.69err.pth** trained on ILSVRC2012, ResNet34-S32U1\*.
-- **ILSVRC_ResNet34_S32U1_28.42err.pth** trained on ILSVRC2012, ResNet34-S32U1.
-- **ILSVRC_ResNet34_S48U1_27.88err.pth** trained on ILSVRC2012, ResNet34-S48U1.
+- **[ILSVRC_ResNet34_DoubleShared_S32U1_27.69err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S32U1\*.
+- **[ILSVRC_ResNet34_SingleShared_S32U1_28.42err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S32U1.
+- **[ILSVRC_ResNet34_SingleShared_S48U1_27.88err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S48U1.
 
 
 ## Results
