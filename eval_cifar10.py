@@ -14,7 +14,7 @@ import utils
 import timeit
 
 #Possible arguments
-parser = argparse.ArgumentParser(description='TODO')
+parser = argparse.ArgumentParser(description='Following arguments are used for the script')
 parser.add_argument('--shared_rank', default=16, type=int, help='Number of shared base)')
 parser.add_argument('--unique_rank', default=1, type=int, help='Number of unique base')
 parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
