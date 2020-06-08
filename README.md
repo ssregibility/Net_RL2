@@ -56,26 +56,26 @@ Following files are pre-trained models trained using the proposed method:
 
 > CIFAR100
 
-- **[CIFAR100_ResNet34_SingleShared_S8U1_23.11err.pth](place.holder)** trained on CIFAR100, ResNet34-S8U1.
-- **[CIFAR100_ResNet34_SingleShared_S16U1_22.64err.pth](place.holder)** trained on CIFAR100, ResNet34-S16U1.
-- **[CIFAR100_ResNet34_SingleShared_S32U1_21.79err.pth](place.holder)** trained on CIFAR100, ResNet34-S32U1.
-- **[C[FAR100_DenseNet121_SingleShared_S16U1_22.15err.pth](place.holder)** trained on CIFAR100, DenseNet121-S16U1.
+- **[CIFAR100_ResNet34_SingleShared_S8U1_23.11err.pth](https://drive.google.com/file/d/13fPb-RoTwq5h7NqZ_vq5onNU7qfJuFhT/view?usp=sharing)** trained on CIFAR100, ResNet34-S8U1.
+- **[CIFAR100_ResNet34_SingleShared_S16U1_22.64err.pth](https://drive.google.com/file/d/1-x4AvZu68ASVfz4lEmH90HXz8gEUvPjN/view?usp=sharing)** trained on CIFAR100, ResNet34-S16U1.
+- **[CIFAR100_ResNet34_SingleShared_S32U1_21.79err.pth](https://drive.google.com/file/d/1O0IskfztEklykdFMrfNMVHGJTKJQD6Am/view?usp=sharing)** trained on CIFAR100, ResNet34-S32U1.
+- **[C[FAR100_DenseNet121_SingleShared_S16U1_22.15err.pth](https://drive.google.com/file/d/13XyNHV9qRGyACKOnUY1dTf3p211yJgA5/view?usp=sharing)** trained on CIFAR100, DenseNet121-S16U1.
 - **[CIFAR100_ResNext50_SingleShared_S64U4_20.09err.pth](https://drive.google.com/file/d/1nLWETVMwZbGXQ8Ta6vtaYI5SuedUcMAm/view?usp=sharing)** trained on CIFAR100, ResNeXt50-S64U4.
 
 > CIFAR10
 
-- **[CIFAR10_ResNet32_DoubleShared_S16U1_6.93err.pth](place.holder)** trained on CIFAR10, ResNet32-S16U1\*.
-- **[CIFAR10_ResNet56_DoubleShared_S16U1_6.30err.pth](place.holder)** trained on CIFAR10, ResNet56-S16U1\*.
-- **[CIFAR10_ResNet32_SingleShared_S8U1_8.08err.pth](place.holder)** trained on CIFAR10, ResNet34-S8U1.
-- **[CIFAR10_ResNet32_SingleShared_S16U1_7.43err.pth](place.holder)** trained on CIFAR10, ResNet34-S16U1.
-- **[CIFAR10_ResNet56_SingleShared_S8U1_7.52err.pth.pth](place.holder)** trained on CIFAR10, ResNet56-S8U1.
-- **[CIFAR10_ResNet56_SingleShared_S16U1_7.46err.pth.pth](place.holder)** trained on CIFAR10, ResNet56-S16U1.
+- **[CIFAR10_ResNet32_DoubleShared_S16U1_6.93err.pth](https://drive.google.com/file/d/1ZB5yZgMUhU9TGruZpInwX9UQo8kZXEHH/view?usp=sharing)** trained on CIFAR10, ResNet32-S16U1\*.
+- **[CIFAR10_ResNet56_DoubleShared_S16U1_6.30err.pth](https://drive.google.com/file/d/1zBQTvDYdbqnfdX3NA6mYy0lHvn68ANRl/view?usp=sharing)** trained on CIFAR10, ResNet56-S16U1\*.
+- **[CIFAR10_ResNet32_SingleShared_S8U1_8.08err.pth](https://drive.google.com/file/d/1QmKmICZKk6h_FnctIr6LQrtFCCvWtcac/view?usp=sharing)** trained on CIFAR10, ResNet34-S8U1.
+- **[CIFAR10_ResNet32_SingleShared_S16U1_7.43err.pth](https://drive.google.com/file/d/1cpCYf6iwN27RIDjmPxPSTXUW3htZ8-P5/view?usp=sharing)** trained on CIFAR10, ResNet34-S16U1.
+- **[CIFAR10_ResNet56_SingleShared_S8U1_7.52err.pth.pth](https://drive.google.com/file/d/1wUB3PnZ8lnSqXFTWGEk1eoLseSFQ2-Tj/view?usp=sharing)** trained on CIFAR10, ResNet56-S8U1.
+- **[CIFAR10_ResNet56_SingleShared_S16U1_7.46err.pth.pth](https://drive.google.com/file/d/17rwH4_KNGX2nBgF0PBbBeKfve5IudZrY/view?usp=sharing)** trained on CIFAR10, ResNet56-S16U1.
 
 > ILSVRC2012
 
-- **[ILSVRC_ResNet34_DoubleShared_S32U1_27.69err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S32U1\*.
-- **[ILSVRC_ResNet34_SingleShared_S32U1_28.42err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S32U1.
-- **[ILSVRC_ResNet34_SingleShared_S48U1_27.88err.pth](place.holder)** trained on ILSVRC2012, ResNet34-S48U1.
+- **[ILSVRC_ResNet34_DoubleShared_S32U1_27.69err.pth](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing)** trained on ILSVRC2012, ResNet34-S32U1\*.
+- **[ILSVRC_ResNet34_SingleShared_S32U1_28.42err.pth](https://drive.google.com/file/d/1OgodlaaYYdYXgRFGAMxP_039R5JkUAij/view?usp=sharing)** trained on ILSVRC2012, ResNet34-S32U1.
+- **[ILSVRC_ResNet34_SingleShared_S48U1_27.88err.pth](https://drive.google.com/file/d/1NHBvlYrTJzuJuKJjIdtlt5krDiXkue2r/view?usp=sharing)** trained on ILSVRC2012, ResNet34-S48U1.
 
 
 ## Results
