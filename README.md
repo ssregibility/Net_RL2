@@ -83,6 +83,10 @@ Every pre-trained models except for ResNext50-S64U4 are included in following di
 
 ## Results
 
+Following graphs are comparison between original [ResNets](https://arxiv.org/abs/1512.03385) and ResNet34s using the proposed method :
+![Image](./images/graph.png)
+
+
 Our model achieves the following performance on :
 
 ### CIFAR-100 Classifcation
