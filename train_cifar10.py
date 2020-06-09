@@ -281,6 +281,78 @@ def train_basis_single(epoch, include_unique_basis=True):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
     
+# Training for parameter shraed models, in case of using shared bases only
+def train_basis_sharedonly(epoch):
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
+            layer = getattr(net, "layer"+str(gid))
+            shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
+            shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
+
+            num_shared_basis = shared_basis_2.weight.shape[0] + shared_basis_1.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            #print("D size:", D.shape)
+          
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+        
+        #average similarity
+        avg_sim = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim)
+
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+    
 #Test for models
 def test(epoch):
     global best_acc
@@ -349,10 +421,12 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
-if 'DoubleShared' in args.model or 'SharedOnly' in args.model:
+if 'DoubleShared' in args.model:
     func_train = train_basis
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
+elif 'SharedOnly' in args.model:
+    func_train = train_basis_sharedonly
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     
