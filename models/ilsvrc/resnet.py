@@ -6,7 +6,7 @@ from torch.autograd import Variable
 
 import copy
 
-#BasicBlock for single basis models
+# BasicBlock for single basis models
 class BasicBlock_SingleShared(nn.Module):
     expansion = 1
 
@@ -56,7 +56,7 @@ class BasicBlock_SingleShared(nn.Module):
         
         return out
 
-#BaiscBlock for double basis models
+# BaiscBlock for double basis models
 class BasicBlock_DoubleShared(nn.Module):
     expansion = 1
 
@@ -108,7 +108,7 @@ class BasicBlock_DoubleShared(nn.Module):
         
         return out
     
-#original BasicBlock
+# Original BasicBlock
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -140,7 +140,7 @@ class BasicBlock(nn.Module):
         
         return out
     
-#Proposed resnet (single basis)
+# Proposed ResNet shaing a single basis for each residual block group
 class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
         super(ResNet_SingleShared, self).__init__()
@@ -207,7 +207,7 @@ class ResNet_SingleShared(nn.Module):
      
         return out
     
-#Proposed resnet (double basis)
+# Proposed ResNet shaing 2 bases for each residual block group
 class ResNet_DoubleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
         super(ResNet_DoubleShared, self).__init__()
@@ -255,15 +255,6 @@ class ResNet_DoubleShared(nn.Module):
             basis_1.weight.data = copy.deepcopy(X[:out_chan,:])
             basis_2.weight.data = copy.deepcopy(X[out_chan:,:])
 
-        # Each share basis is orthogonal-initialized separately
-        # @@ obsolote
-        """
-        torch.nn.init.orthogonal_(self.shared_basis_1.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_2.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_3.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_4.weight)
-        """
-
     def _make_layer(self, block_basis, block_original, planes, blocks, unique_rank, shared_basis_1, shared_basis_2, stride=1):
         layers = []
         
@@ -292,7 +283,7 @@ class ResNet_DoubleShared(nn.Module):
      
         return out
 
-#original ResNet
+# Original ResNet
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=1000):
         super(ResNet, self).__init__()
@@ -343,18 +334,18 @@ class ResNet(nn.Module):
      
         return out
 
-#Original ResNet
+# Original ResNet
 def ResNet18():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
-#Original ResNet
+# Original ResNet
 def ResNet34():
     return ResNet(BasicBlock, [3, 4, 6, 3])
 
-#A model with 2 shared bases in each residual block group.
+# A model with 2 shared bases in each residual block group.
 def ResNet34_DoubleShared(shared_rank, unique_rank):
     return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
 
-#A model with a shared basis in each residual block group.
+# A model with a shared basis in each residual block group.
 def ResNet34_SingleShared(shared_rank, unique_rank):
     return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
