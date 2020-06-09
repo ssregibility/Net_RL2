@@ -111,11 +111,11 @@ Our model achieves the following performance on :
 
 ### ILSVRC2012 Classifcation
 
-| Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |
-| ------------------ |---------------- | -------------- | ------------ | ----- |
-| ResNet34-S32U1     |     28.42%         |      9.55%       |      8.20M     |  4.98G  |
-| ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  |
-| ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  |
+| Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |  |
+| ------------------ |---------------- | -------------- | ------------ | ----- | ----- |
+| ResNet34-S32U1     |     28.42%         |      9.55%       |      8.20M     |  4.98G  | [Download](https://drive.google.com/file/d/1OgodlaaYYdYXgRFGAMxP_039R5JkUAij/view?usp=sharing) |
+| ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  | [Download](https://drive.google.com/file/d/1NHBvlYrTJzuJuKJjIdtlt5krDiXkue2r/view?usp=sharing) |
+| ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing) |
 
 \* denotes having 2 shared bases in each residual block group.
 
