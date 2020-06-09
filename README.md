@@ -59,7 +59,7 @@ Following files are pre-trained models trained using the proposed method:
 - **[CIFAR100_ResNet34_SingleShared_S8U1_23.11err.pth](https://drive.google.com/file/d/13fPb-RoTwq5h7NqZ_vq5onNU7qfJuFhT/view?usp=sharing)** trained on CIFAR100, ResNet34-S8U1.
 - **[CIFAR100_ResNet34_SingleShared_S16U1_22.64err.pth](https://drive.google.com/file/d/1-x4AvZu68ASVfz4lEmH90HXz8gEUvPjN/view?usp=sharing)** trained on CIFAR100, ResNet34-S16U1.
 - **[CIFAR100_ResNet34_SingleShared_S32U1_21.79err.pth](https://drive.google.com/file/d/1O0IskfztEklykdFMrfNMVHGJTKJQD6Am/view?usp=sharing)** trained on CIFAR100, ResNet34-S32U1.
-- **[C[FAR100_DenseNet121_SingleShared_S16U1_22.15err.pth](https://drive.google.com/file/d/13XyNHV9qRGyACKOnUY1dTf3p211yJgA5/view?usp=sharing)** trained on CIFAR100, DenseNet121-S16U1.
+- **[CIFAR100_DenseNet121_SingleShared_S16U1_22.15err.pth](https://drive.google.com/file/d/13XyNHV9qRGyACKOnUY1dTf3p211yJgA5/view?usp=sharing)** trained on CIFAR100, DenseNet121-S16U1.
 - **[CIFAR100_ResNext50_SingleShared_S64U4_20.09err.pth](https://drive.google.com/file/d/1nLWETVMwZbGXQ8Ta6vtaYI5SuedUcMAm/view?usp=sharing)** trained on CIFAR100, ResNeXt50-S64U4.
 
 > CIFAR10
