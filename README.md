@@ -91,7 +91,8 @@ Our model achieves the following performance on :
 | ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.30G  | [Download](https://drive.google.com/file/d/1ZB5yZgMUhU9TGruZpInwX9UQo8kZXEHH/view?usp=sharing) |
 | ResNet56-S16U1\*    |     6.30%         |      0.31M     |  0.30G  | [Download](https://drive.google.com/file/d/1zBQTvDYdbqnfdX3NA6mYy0lHvn68ANRl/view?usp=sharing) |
 
-\* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for these models.
+\* denotes having 2 shared bases in each residual block group. 
+Use ```--model=ResNetXX-DoubleShared``` for these models.
 
 ### ILSVRC2012 Classifcation
 
@@ -101,7 +102,8 @@ Our model achieves the following performance on :
 | ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  | [Download](https://drive.google.com/file/d/1NHBvlYrTJzuJuKJjIdtlt5krDiXkue2r/view?usp=sharing) |
 | ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing) |
 
-\* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for these models.
+\* denotes having 2 shared bases in each residual block group. 
+Use ```--model=ResNetXX-DoubleShared``` for these models.
 
 ## Contributing
 
