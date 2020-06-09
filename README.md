@@ -6,7 +6,7 @@ This repository is the official implementation of **Learning Shared Filter Bases
 
 We conducted experiments under
 - python 3.6.9
-- pytorch 1.5.0, torchvision 0.4.0, cuda10
+- pytorch 1.5.0, torchvision 0.5.0, cuda10
 
 To install requirements:
 
