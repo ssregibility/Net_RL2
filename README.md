@@ -104,7 +104,7 @@ Use ```--model=ResNetXX-DoubleShared``` for these models.
 
 Notes
 - ResNet*XX*-S*s*U*u* denotes our model based on original ResNet*XX* model with *s* rank of shared filter basis and *u* rank of unique filter basis. Use ```--shared_rank=s``` and ```--unique_rank=u``` for evaluating pretrained models.
-- \* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for evaluating these models. Otherwise use ```--model=ResNetXX-DoubleShared```.
+- \* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for evaluating these models. Otherwise use ```--model=ResNetXX-SingleShared```.
 
 ## Contributing
 
