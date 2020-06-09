@@ -1,6 +1,6 @@
 # Learning Shared Filter Bases for Efficient ConvNets
 
-This repository is the official implementation of **Learning Shared Filter Bases for Efficient ConvNets**, a NIPS2020 submission.
+Official implementation of **Learning Shared Filter Bases for Efficient ConvNets**, a NeurIPS-2020 submission.
 - We propose to share filter bases of decomposed convolution layers for effective  sharing  of  parameters in ConvNets.
 - In overparameterized networks, our method outperforms much deeper counterpart original networks while reducing parameters and computational costs substantially.
 ![Image](https://github.com/ssregibility/Net_RL2/blob/master/images/conv_decomp.jpg?raw=true)
@@ -10,7 +10,7 @@ This repository is the official implementation of **Learning Shared Filter Bases
 
 We conducted experiments under
 - python 3.6.9
-- pytorch 1.5.0, torchvision 0.5.0, cuda10
+- pytorch 1.5, torchvision 0.4, cuda10
 
 To install requirements:
 
@@ -91,9 +91,6 @@ Our model achieves the following performance on :
 | ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.30G  | [Download](https://drive.google.com/file/d/1ZB5yZgMUhU9TGruZpInwX9UQo8kZXEHH/view?usp=sharing) |
 | ResNet56-S16U1\*    |     6.30%         |      0.31M     |  0.30G  | [Download](https://drive.google.com/file/d/1zBQTvDYdbqnfdX3NA6mYy0lHvn68ANRl/view?usp=sharing) |
 
-\* denotes having 2 shared bases in each residual block group. 
-Use ```--model=ResNetXX-DoubleShared``` for these models.
-
 ### ILSVRC2012 Classifcation
 
 | Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |  |
@@ -103,7 +100,7 @@ Use ```--model=ResNetXX-DoubleShared``` for these models.
 | ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing) |
 
 Notes
-- ResNet*XX*-S*s*U*u* denotes our model based on original ResNet*XX* model with *s* rank of shared filter basis and *u* rank of unique filter basis. Use ```--shared_rank=s``` and ```--unique_rank=u``` for evaluating pretrained models.
+- ResNet*XX*-S*s*U*u* denotes our model based on original ResNet*XX* with *s* rank of shared filter basis and *u* rank of unique filter basis. Use ```--shared_rank=s``` and ```--unique_rank=u``` for evaluating pretrained models.
 - \* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for evaluating these models. Otherwise use ```--model=ResNetXX-SingleShared```.
 
 ## Contributing
