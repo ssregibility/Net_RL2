@@ -59,7 +59,7 @@ python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=<model_to_evaluate> 
 ```
 
 Notes
--  ```---shared_rank``` and ```---unique_rank---``` options need to be properly specified for evaluating pretrained models.
+-  ```---shared_rank``` and ```---unique_rank``` options need to be properly specified for evaluating pretrained models.
 
 
 ## Results
