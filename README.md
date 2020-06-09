@@ -73,10 +73,8 @@ Our model achieves the following performance on :
 
 | Model name         | Top 1 Error  | Params | FLOPs |  |
 | ------------------ |---------------- | ------------ | ----- |----|
-| ResNet34-S8U1      |     23.11%         |      5.87M     |  0.79G  | [Download]
-(https://drive.google.com/file/d/13fPb-RoTwq5h7NqZ_vq5onNU7qfJuFhT/view?usp=sharing) |
-| ResNet34-S16U1     |     22.64%         |      6.49M     |  1.05G  | [Download]
-(https://drive.google.com/file/d/1-x4AvZu68ASVfz4lEmH90HXz8gEUvPjN/view?usp=sharing) |
+| ResNet34-S8U1      |     23.11%         |      5.87M     |  0.79G  | [Download](https://drive.google.com/file/d/13fPb-RoTwq5h7NqZ_vq5onNU7qfJuFhT/view?usp=sharing) |
+| ResNet34-S16U1     |     22.64%         |      6.49M     |  1.05G  | [Download](https://drive.google.com/file/d/1-x4AvZu68ASVfz4lEmH90HXz8gEUvPjN/view?usp=sharing) |
 | ResNet34-S32U1     |     21.79%         |      7.73M     |  1.55G  | [Download](https://drive.google.com/file/d/1O0IskfztEklykdFMrfNMVHGJTKJQD6Am/view?usp=sharing) |
 | DenseNet121-S64U4  |     22.15%         |      5.08M     |  1.43G  | [Download](https://drive.google.com/file/d/13XyNHV9qRGyACKOnUY1dTf3p211yJgA5/view?usp=sharing) |
 | ResNeXt50-S16U1    |     20.09%         |      19.3M     |  2.38G  | [Download](https://drive.google.com/file/d/1nLWETVMwZbGXQ8Ta6vtaYI5SuedUcMAm/view?usp=sharing) |
