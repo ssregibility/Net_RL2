@@ -14,7 +14,7 @@ class LambdaLayer(nn.Module):
     def forward(self, x):
         return self.lambd(x)
     
-#BasicBlock for models with unique basis only
+# BasicBlock for models with unique basis only
 class BasicBlock_NonShared(nn.Module):
     expansion = 1
 
@@ -72,7 +72,7 @@ class BasicBlock_NonShared(nn.Module):
         
         return out
     
-#BasicBlock for models with shared basis only
+# BasicBlock for models with shared basis only
 class BasicBlock_SharedOnly(nn.Module):
     expansion = 1
 
@@ -129,7 +129,7 @@ class BasicBlock_SharedOnly(nn.Module):
         
         return out
     
-#BasicBlock for single basis models
+# BasicBlock for single basis models
 class BasicBlock_SingleShared(nn.Module):
     expansion = 1
 
@@ -187,7 +187,7 @@ class BasicBlock_SingleShared(nn.Module):
         
         return out
     
-#BasicBlock for double basis models (proposed models)
+# BasicBlock for double basis models (proposed models)
 class BasicBlock_DoubleShared(nn.Module):
     expansion = 1
 
@@ -247,7 +247,7 @@ class BasicBlock_DoubleShared(nn.Module):
         
         return out
     
-#Original BasicBlock
+# Original BasicBlock
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -287,7 +287,7 @@ class BasicBlock(nn.Module):
         
         return out
     
-#ResNet for unique basis only models
+# ResNet for unique basis only models
 class ResNet_NonShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, unique_rank, num_classes=10):
         super(ResNet_NonShared, self).__init__()
@@ -350,7 +350,7 @@ class ResNet_NonShared(nn.Module):
      
         return x
     
-#ResNet for shared basis only models
+# ResNet for shared basis only models
 class ResNet_SharedOnly(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, num_classes=10):
         super(ResNet_SharedOnly, self).__init__()
@@ -393,17 +393,6 @@ class ResNet_SharedOnly(nn.Module):
             basis_1.weight.data = copy.deepcopy(X[:out_chan,:])
             basis_2.weight.data = copy.deepcopy(X[out_chan:,:])
 
-        # Each share basis is orthogonal-initialized separately
-        # @@ obsolote woochul@2020.05.25
-        '''
-        torch.nn.init.orthogonal_(self.shared_basis_1_1.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_1_2.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_2_1.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_2_2.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_3_1.weight)
-        torch.nn.init.orthogonal_(self.shared_basis_3_2.weight)
-        '''
-
     def _make_layer(self, block_basis, block_original, planes, blocks, shared_basis_1, shared_basis_2, stride=1):
         layers = []
         
@@ -441,7 +430,7 @@ class ResNet_SharedOnly(nn.Module):
      
         return x
     
-#ResNet for single basis only models
+# Proposed ResNet sharing a single basis for each residual block group.
 class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
         super(ResNet_SingleShared, self).__init__()
@@ -514,7 +503,7 @@ class ResNet_SingleShared(nn.Module):
      
         return x
     
-#ResNet for proposed models
+# Proposed ResNet sharing 2 bases for each residual block group.
 class ResNet_DoubleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=10):
         super(ResNet_DoubleShared, self).__init__()
@@ -605,7 +594,7 @@ class ResNet_DoubleShared(nn.Module):
      
         return x
 
-#original resnet
+# Original resnet
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
@@ -652,58 +641,58 @@ class ResNet(nn.Module):
      
         return x
 
-#Original ResNet
+# Original ResNet
 def ResNet20():
     return ResNet(BasicBlock, [3, 3, 3])
 
-#Original ResNet
+# Original ResNet
 def ResNet32():
     return ResNet(BasicBlock, [5, 5, 5])
 
-#Original ResNet
+# Original ResNet
 def ResNet44():
     return ResNet(BasicBlock, [7, 7, 7])
 
-#Original ResNet
+# Original ResNet
 def ResNet56():
     return ResNet(BasicBlock, [9, 9, 9])
 
-#Original ResNet
+# Original ResNet
 def ResNet110():
     return ResNet(BasicBlock, [18, 18, 18])
 
-#Original ResNet
+# Original ResNet
 def ResNet1202():
     return ResNet(BasicBlock, [200, 200, 200])
 
-#A model with 2 shared bases in each residual block group.
+# A model with 2 shared bases in each residual block group.
 def ResNet56_DoubleShared(shared_rank, unique_rank):
     return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
 
-#A model with 2 shared bases in each residual block group.
+# A model with 2 shared bases in each residual block group.
 def ResNet32_DoubleShared(shared_rank, unique_rank):
     return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
-#A model with a shared basis in each residual block group.
+# A model with a single shared basis in each residual block group.
 def ResNet56_SingleShared(shared_rank, unique_rank):
     return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [9, 9, 9], shared_rank, unique_rank)
 
-#A model with a shared basis in each residual block group.
+# A model with a single shared basis in each residual block group.
 def ResNet32_SingleShared(shared_rank, unique_rank):
     return ResNet_SingleShared(BasicBlock_SingleShared, BasicBlock, [5, 5, 5], shared_rank, unique_rank)
 
-#A model with a shared basis in each residual block group, without any unique basis.
+# A model with a shared basis in each residual block group, without any unique basis.
 def ResNet56_SharedOnly(shared_rank):
     return ResNet_SharedOnly(BasicBlock_SharedOnly, BasicBlock, [9, 9, 9], shared_rank)
 
-#A model with a shared basis in each residual block group, without any unique basis.
+# A model with a shared basis in each residual block group, without any unique basis.
 def ResNet32_SharedOnly(shared_rank):
     return ResNet_SharedOnly(BasicBlock_SharedOnly, BasicBlock, [5, 5, 5], shared_rank)
 
-#A model without shared basis in each residual block group. only unique base are in the block.
+# A model without shared bases in each residual block group. Only unique bases used are in each block.
 def ResNet56_NonShared(unique_rank):
     return ResNet_NonShared(BasicBlock_NonShared, BasicBlock, [9, 9, 9], unique_rank)
 
-#A model without shared basis in each residual block group. only unique base are in the block.
+#A model without shared basis in each residual block group. Only unique base are used in the block.
 def ResNet32_NonShared(unique_rank):
     return ResNet_NonShared(BasicBlock_NonShared, BasicBlock, [5, 5, 5], unique_rank)
