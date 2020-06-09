@@ -2,8 +2,7 @@
 
 This repository is the official implementation of **Learning Shared Filter Bases for Efficient ConvNets**, a NIPS2020 submission.
 - We propose to share filter bases of decomposed convolution layers for effective  sharing  of  parameters in ConvNets.
-- Our method reduces parameters and computational costs substantially while achieving competitive performance.
-- In particular, in heavily overparameterized networks on CIFAR, our method outperforms much deeper counterpart original networks. 
+- In overparameterized networks, our method outperforms much deeper counterpart original networks while reducing parameters and computational costs substantially.
 ![Image](https://github.com/ssregibility/Net_RL2/blob/master/images/conv_decomp.jpg?raw=true)
 
 
