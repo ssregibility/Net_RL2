@@ -102,8 +102,9 @@ Use ```--model=ResNetXX-DoubleShared``` for these models.
 | ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  | [Download](https://drive.google.com/file/d/1NHBvlYrTJzuJuKJjIdtlt5krDiXkue2r/view?usp=sharing) |
 | ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing) |
 
-\* denotes having 2 shared bases in each residual block group. 
-Use ```--model=ResNetXX-DoubleShared``` for these models.
+Notes
+- ResNet*L*-S*s*U*u* denotes ResNet*L* model adapted with our method having *s* rank of shared filter basis and *u* rank of shared filter basis.
+-\* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for these models. Otherwise use ```--model=ResNetXX-DoubleShared```.
 
 ## Contributing
 
