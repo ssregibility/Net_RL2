@@ -140,7 +140,7 @@ class BasicBlock(nn.Module):
         
         return out
     
-# Proposed ResNet shaing a single basis for each residual block group
+# Proposed ResNet sharing a single basis for each residual block group
 class ResNet_SingleShared(nn.Module):
     def __init__(self, block_basis, block_original, num_blocks, shared_rank, unique_rank, num_classes=1000):
         super(ResNet_SingleShared, self).__init__()
