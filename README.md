@@ -63,8 +63,7 @@ Notes
 
 
 ## Results
-
-Following graphs are comparison between original [ResNets](https://arxiv.org/abs/1512.03385) and ResNet34s using the proposed method :
+Testing errors vs. the number of parameters and FLOPs on CIFAR-100. The number ofshared basis components (s), and non-shared basis components (u) are varied. Using more shared basis components results in better performance. In contrast, using more non-shared components does not always improve performance.
 ![Image](https://github.com/ssregibility/Net_RL2/blob/master/images/graph.png?raw=true)
 
 
