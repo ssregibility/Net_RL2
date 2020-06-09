@@ -43,23 +43,23 @@ python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10
 To evaluate proposed models on CIFAR-10, run:
 
 ```eval
-python3 eval_cifar10.py --pretrained=<path_to_model> --model=<model_to_evaluate> --visible_device=<CUDA_NUM_to_use> --shared_rank=<num_of_shared_base> --unique_rank=<num_of_unique_base> --batch_size=<batch_size>
+python3 eval_cifar10.py --pretrained=<path_to_model> --model=ResNet56_DoubleShared --shared_rank=16 --unique_rank=1
 ```
 
 To evaluate proposed models on CIFAR-100, run:
 
 ```eval
-python3 eval_cifar100.py --pretrained=<path_to_model> --model=<model_to_evaluate> --visible_device=<CUDA_NUM_to_use> --shared_rank=<num_of_shared_base> --unique_rank=<num_of_unique_base> --batch_size=<batch_size>
+python3 eval_cifar100.py --pretrained=<path_to_model> --model=ResNet34_SingleShared --shared_rank=16 --unique_rank=1
 ```
 
 To evaluate proposed models on ILSVRC2012, run:
 
 ```eval
-python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=<model_to_evaluate> --visible_device=<CUDA_NUM_to_use> --shared_rank=<num_of_shared_base> --unique_rank=<num_of_unique_base> --batch_size=<batch_size> --dataset_path=<path_to_dataset>
+python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet34_DoubleShared --shared_rank=32 --unique_rank=1 --dataset_path=<path_to_dataset>
 ```
 
 Notes
--  ```---shared_rank``` and ```---unique_rank``` options need to be properly specified for evaluating pretrained models.
+-  ```---model```, ```---shared_rank``` and ```---unique_rank``` options need to be properly specified for evaluating pretrained models.
 
 
 ## Results
