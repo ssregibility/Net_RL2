@@ -104,7 +104,7 @@ Use ```--model=ResNetXX-DoubleShared``` for these models.
 
 Notes
 - ResNet*L*-S*s*U*u* denotes ResNet*L* model adapted with our method having *s* rank of shared filter basis and *u* rank of shared filter basis.
--\* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for these models. Otherwise use ```--model=ResNetXX-DoubleShared```.
+- \* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for these models. Otherwise use ```--model=ResNetXX-DoubleShared```.
 
 ## Contributing
 
