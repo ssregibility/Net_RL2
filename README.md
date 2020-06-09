@@ -58,6 +58,10 @@ To evaluate proposed models on ILSVRC2012, run:
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=<model_to_evaluate> --visible_device=<CUDA_NUM_to_use> --shared_rank=<num_of_shared_base> --unique_rank=<num_of_unique_base> --batch_size=<batch_size> --dataset_path=<path_to_dataset>
 ```
 
+Notes
+-  ```---shared_rank``` and ```---unique_rank---``` optins need to be properly specified for evaluating pretrained models.
+
+
 ## Results
 
 Following graphs are comparison between original [ResNets](https://arxiv.org/abs/1512.03385) and ResNet34s using the proposed method :
