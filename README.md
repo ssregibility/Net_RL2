@@ -59,7 +59,7 @@ python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet34_DoubleShare
 ```
 
 Notes
--  ```---model```, ```---shared_rank``` and ```---unique_rank``` options need to be properly specified for evaluating pretrained models.
+-  ```---model```, ```---shared_rank``` and ```---unique_rank``` options need to be adjusted properly for evaluating pretrained  pretrained models.
 
 
 ## Results
