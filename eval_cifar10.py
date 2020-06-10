@@ -31,7 +31,7 @@ if args.model not in dic_model:
     print("The model is currently not supported")
     sys.exit()
 
-testloader = utils.get_testdata('CIFAR10',args.dataset_path,batch_size=args.batch_size)
+testloader = utils.get_testdata('CIFAR10',args.dataset_path,batch_size=args.batch_size,download=True)
 
 #args.visible_device sets which cuda devices to be used
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
