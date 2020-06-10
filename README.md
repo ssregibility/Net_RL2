@@ -5,7 +5,7 @@ Official implementation of **Learning Shared Filter Bases for Efficient ConvNets
 - In overparameterized networks, our method outperforms much deeper counterpart original networks while reducing parameters and computational costs substantially.
 ![Image](https://github.com/ssregibility/Net_RL2/blob/master/images/conv_decomp.jpg?raw=true)
 
-Source codes are also available at [github](https://github.com/ssregibility/Net_RL2)
+Source codes of this project are also available at [github](https://github.com/ssregibility/Net_RL2)
 ## Requirements
 
 We conducted experiments under
