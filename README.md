@@ -84,9 +84,9 @@ Our model achieves the following performance on :
 | ------------------ |---------------- | ------------ | ----- | ----- |
 | ResNet32-S8U1      |     8.08%         |      0.15M     |  0.10G  | [Download](https://drive.google.com/file/d/1QmKmICZKk6h_FnctIr6LQrtFCCvWtcac/view?usp=sharing) |
 | ResNet32-S16U1     |     7.43%         |      0.20M     |  0.16G  | [Download](https://drive.google.com/file/d/1cpCYf6iwN27RIDjmPxPSTXUW3htZ8-P5/view?usp=sharing) |
+| ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.16G  | [Download](https://drive.google.com/file/d/1ZB5yZgMUhU9TGruZpInwX9UQo8kZXEHH/view?usp=sharing) |
 | ResNet56-S8U1      |     7.52%         |      0.20M     |  0.17G  | [Download](https://drive.google.com/file/d/1wUB3PnZ8lnSqXFTWGEk1eoLseSFQ2-Tj/view?usp=sharing) |
 | ResNet56-S16U1     |     7.46%         |      0.22M     |  0.30G | [Download](https://drive.google.com/file/d/17rwH4_KNGX2nBgF0PBbBeKfve5IudZrY/view?usp=sharing) |
-| ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.30G  | [Download](https://drive.google.com/file/d/1ZB5yZgMUhU9TGruZpInwX9UQo8kZXEHH/view?usp=sharing) |
 | ResNet56-S16U1\*    |     6.30%         |      0.31M     |  0.30G  | [Download](https://drive.google.com/file/d/1zBQTvDYdbqnfdX3NA6mYy0lHvn68ANRl/view?usp=sharing) |
 
 ### ILSVRC2012 Classifcation
