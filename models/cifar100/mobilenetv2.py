@@ -209,7 +209,7 @@ class MobileNetV2(nn.Module):
 
 def test():
     net = MobileNetV2_Shared(class_num=100)
-    print(net)
+    #print(net)
     x = torch.randn(256,3,32,32)
     y = net(x)
     print(y.size())
