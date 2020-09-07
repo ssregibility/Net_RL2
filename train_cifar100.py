@@ -214,6 +214,33 @@ def train_basis_mobilenetv2(epoch):
         #average similarity
         avg_sim = sim / cnt_sim
 
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # mobilenet has 4 shared groups
+            # processes only the first shared 1x1 convolutions
+            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_2") 
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim += sim / cnt_sim
+
+
         #acc loss
         loss = criterion(outputs, targets)
 
