@@ -29,8 +29,8 @@ parser.add_argument('--dataset_path', default="./data/", help='A path to dataset
 parser.add_argument('--model', default="ResNet34_SingleShared", help='ResNet18, ResNet34, ResNet34_SingleShared, ResNet34_NonShared, ResNet34_SharedOnly, DenseNet121, DenseNet121_SingleShared, ResNext50, ResNext50_SingleShared')
 args = parser.parse_args()
 
-from models.cifar100 import resnet, densenet, resnext
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared, 'ResNet34_NonShared':resnet.ResNet34_NonShared, 'ResNet34_SharedOnly':resnet.ResNet34_SharedOnly, 'DenseNet121':densenet.DenseNet121, 'DenseNet121_SingleShared':densenet.DenseNet121_SingleShared, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared}
+from models.cifar100 import resnet, densenet, resnext, mobilenetv2
+dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared, 'ResNet34_NonShared':resnet.ResNet34_NonShared, 'ResNet34_SharedOnly':resnet.ResNet34_SharedOnly, 'DenseNet121':densenet.DenseNet121, 'DenseNet121_SingleShared':densenet.DenseNet121_SingleShared, 'ResNext50':resnext.ResNext50_32x4d, 'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared, 'MobileNetV2':mobilenetv2.MobileNetV2_Shared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
