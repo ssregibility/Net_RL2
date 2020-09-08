@@ -88,20 +88,20 @@ class MobileNetV2_Shared(nn.Module):
         self.stage1 = Block(32, 16, 1, 1)
         self.stage2 = self._make_stage(2, 16, 24, 2, 6)
         
-        self.shared_basis_1_1=  nn.Conv2d(32, 31, kernel_size=1, stride=1, padding=0, bias=False)
-        self.shared_basis_1_2 = nn.Conv2d(31, 31, kernel_size=3, stride=1, padding=1, groups=31, bias=False)        
+        self.shared_basis_1_1=  nn.Conv2d(32, 32*6 - 1, kernel_size=1, stride=1, padding=0, bias=False)
+        self.shared_basis_1_2 = nn.Conv2d(32*6 - 1, 32*6 - 1, kernel_size=3, stride=1, padding=1, groups=32*6 - 1, bias=False)        
         self.stage3 = self._make_shared_stage(3, 24, 32, 2, 6, self.shared_basis_1_1, self.shared_basis_1_2)
 
-        self.shared_basis_2_1=  nn.Conv2d(64, 62, kernel_size=1, stride=1, padding=0, bias=False)
-        self.shared_basis_2_2 = nn.Conv2d(62, 62, kernel_size=3, stride=1, padding=1, groups=62, bias=False)
+        self.shared_basis_2_1=  nn.Conv2d(64, 64*6 -2, kernel_size=1, stride=1, padding=0, bias=False)
+        self.shared_basis_2_2 = nn.Conv2d(64*6 -2, 64*6 -2, kernel_size=3, stride=1, padding=1, groups=64*6 - 2, bias=False)
         self.stage4 = self._make_shared_stage(4, 32, 64, 2, 6, self.shared_basis_2_1, self.shared_basis_2_2)
 
-        self.shared_basis_3_1=  nn.Conv2d(96, 93, kernel_size=1, stride=1, padding=0, bias=False)
-        self.shared_basis_3_2 = nn.Conv2d(93, 93, kernel_size=3, stride=1, padding=1, groups=93, bias=False)
+        self.shared_basis_3_1=  nn.Conv2d(96, 96*6-3, kernel_size=1, stride=1, padding=0, bias=False)
+        self.shared_basis_3_2 = nn.Conv2d(96*6-3, 96*6-3, kernel_size=3, stride=1, padding=1, groups=96*6 - 3, bias=False)
         self.stage5 = self._make_shared_stage(3, 64, 96, 1, 6, self.shared_basis_3_1, self.shared_basis_3_2)
 
-        self.shared_basis_4_1=  nn.Conv2d(160, 156, kernel_size=1, stride=1, padding=0, bias=False)
-        self.shared_basis_4_2 = nn.Conv2d(156, 156, kernel_size=3, stride=1, padding=1, groups=156, bias=False)
+        self.shared_basis_4_1=  nn.Conv2d(160, 160*6-4, kernel_size=1, stride=1, padding=0, bias=False)
+        self.shared_basis_4_2 = nn.Conv2d(160*6-4, 160*6-4, kernel_size=3, stride=1, padding=1, groups=160*6 - 4, bias=False)
         self.stage6 = self._make_shared_stage(3, 96, 160, 1, 6, self.shared_basis_4_1, self.shared_basis_4_2)
 
         self.stage7 = Block(160, 320, 6, 1)
@@ -212,7 +212,7 @@ def test():
     #print(net)
     x = torch.randn(256,3,32,32)
     y = net(x)
-    print(y.size())
+    #print(y.size())
     #print(net)
 
 test()
