@@ -26,18 +26,23 @@ parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES'
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, MobileNetV2, MobileNetV2_Shared')
 args = parser.parse_args()
 
-from models.ilsvrc import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared}
+from models.ilsvrc import resnet, mobilenetv2, mobilenetv2_orig
+dic_model = {'ResNet18': resnet.ResNet18, \
+    'ResNet34':resnet.ResNet34, \
+    'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, \
+    'ResNet34_SingleShared':resnet.ResNet34_SingleShared, \
+    'MobileNetV2':mobilenetv2.MobileNetV2, \
+    'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
     sys.exit()
 
-trainloader = utils.get_traindata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size,download=True, num_workers=4)
-testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=4)
+trainloader = utils.get_traindata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size,download=True, num_workers=8)
+testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=8)
 
 #args.visible_device sets which cuda devices to be used
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
@@ -48,8 +53,24 @@ if 'DoubleShared' in args.model or 'SingleShared' in args.model:
     net = dic_model[args.model](args.shared_rank, args.unique_rank)
 else:
     net = dic_model[args.model]()
+
+#net = torchvision.models.mobilenet_v2(pretrained=False)
     
 net = net.to(device)
+
+# parallelize 
+class MyDataParallel(nn.DataParallel):
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.module, name)
+
+if torch.cuda.device_count() > 1:
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+    net = MyDataParallel(net)
+
 
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
@@ -258,25 +279,37 @@ def test(epoch):
             total += targets.size(0)
             
     # Save checkpoint.
+    # Save checkpoint.
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
-    #if acc_top1 > best_acc:
-    if True: #for ILSVRC, save model state every epoch
-        #print('Saving..')
+    print("Test_Acc_Top1/5 = %.3f\t%.3f" % (acc_top1, acc_top5))
+
+    if acc_top1 > best_acc:
+        print('Saving Best..')
         state = {
             'net_state_dict': net.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'acc': acc_top1,
             'epoch': epoch,
         }
-        if not os.path.isdir('checkpoint'):
+        if not os.path.isdir('./checkpoint'):
+            os.mkdir('./checkpoint')
+        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-" + args.visible_device + '.pth')
+        best_acc = acc_top1
+        best_acc_top5 = acc_top5
+        print("Best_Acc_top1/5 = %.3f\t%.3f" % (best_acc, best_acc_top5))
+    if epoch % 5 == 0:
+        print('Saving..')
+        state = {
+            'net_state_dict': net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'acc': acc_top1,
+            'epoch': epoch,
+        }
+        if not os.path.isdir('./checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + 'ILSVRC2012-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
-        if acc_top1 > best_acc:
-            best_acc = acc_top1
-            best_acc_top5 = acc_top5
-        print("Current_Acc_top1 = %.3f" % acc_top1)
-        print("Current_Acc_top5 = %.3f" % acc_top5)
+        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-" + args.visible_device + '-epoch-' + str(epoch) + '.pth')
+        
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
@@ -284,7 +317,7 @@ def adjust_learning_rate(optimizer, epoch, args_lr):
         lr = lr * 0.1
     if epoch > 75:
         lr = lr * 0.1
-    if epoch > 105:
+    if epoch > 110:
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
@@ -297,6 +330,8 @@ func_train = train
 if 'DoubleShared' in args.model:
     func_train = train_basis
 elif 'SingleShared' in args.model:
+    func_train = train_basis_single
+elif 'MobileNetV2_Shared' in args.model:
     func_train = train_basis_single
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)

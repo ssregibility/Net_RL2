@@ -22,18 +22,23 @@ class Block(nn.Module):
         self.conv3 = nn.Conv2d(planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
-        self.shortcut = nn.Sequential()
-        if stride == 1 and in_planes != out_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False),
-                nn.BatchNorm2d(out_planes),
-            )
+        self.use_res_connect = self.stride == 1 and in_planes == out_planes
+
+        #self.shortcut = nn.Sequential()
+        # if stride == 1 and in_planes != out_planes:
+        #     self.shortcut = nn.Sequential(
+        #         nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False),
+        #         nn.BatchNorm2d(out_planes),
+        #     )
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
+        out = F.relu(self.bn1(self.conv1(x)), inplace=True)
+        out = F.relu(self.bn2(self.conv2(out)), inplace=True)
         out = self.bn3(self.conv3(out))
-        out = out + self.shortcut(x) if self.stride==1 else out
+        #out = out + self.shortcut(x) if self.stride==1 else out
+        if self.use_res_connect:
+            out = x + out
+
         return out
 
 class BlockShared(nn.Module):
@@ -52,37 +57,37 @@ class BlockShared(nn.Module):
         self.conv3 = nn.Conv2d(planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
-        self.shortcut = nn.Sequential()
-        if stride == 1 and in_planes != out_planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False),
-                nn.BatchNorm2d(out_planes),
-            )
+        self.use_res_connect = self.stride == 1 and in_planes == out_planes
 
     def forward(self, x):
         #print("x size #2:", x.shape)
         #print("basis weight:", self.shared_basis1.weight.shape)
         #print("conv1 weight:", self.conv1.weight.shape)
-        out = F.relu(self.bn1(self.shared_basis1(x)))
+        out = F.relu(self.bn1(self.shared_basis1(x)), inplace=True)
         #out = F.relu(self.bn1(self.conv1(x)))
         #print("out shape:", out.shape)
-        out = F.relu(self.bn2(self.conv2(out)))
+        out = F.relu(self.bn2(self.conv2(out)), inplace=True)
         out = self.bn3(self.conv3(out))
-        out = out + self.shortcut(x) if self.stride==1 else out
+
+        #print("x shape:", x.shape)
+        #print("out shape:", out.shape)
+        if self.use_res_connect:
+            out = x + out
+
         return out
 
 class MobileNetV2_Shared(nn.Module):
 
-    def __init__(self, class_num=100):
+    def __init__(self, class_num=1000):
         super(MobileNetV2_Shared, self).__init__()
 
         self.pre = nn.Sequential(
-            nn.Conv2d(3, 32, 1, padding=1),
+            nn.Conv2d(3, 32, 3, stride=2, padding=1),   # 1x1->3x3, stride 1->2 for ilsvrc
             nn.BatchNorm2d(32),
             nn.ReLU6(inplace=True)
         )
 
-        self.stage1 = Block(32, 16, 1, 1)
+        self.stage1 = Block(32, 16, 1, 1)  # stride 2->1 for ilsvrc
         self.stage2 = self._make_stage(2, 16, 24, 2, 6)
         
         self.shared_basis_1=  nn.Conv2d(32, 32*6, kernel_size=1, stride=1, padding=0, bias=False)
@@ -94,8 +99,8 @@ class MobileNetV2_Shared(nn.Module):
         self.shared_basis_3=  nn.Conv2d(96, 96*6, kernel_size=1, stride=1, padding=0, bias=False)
         self.stage5 = self._make_shared_stage(3, 64, 96, 1, 6, self.shared_basis_3)
 
-        self.shared_basis_4=  nn.Conv2d(160, 160*6, kernel_size=1, stride=1, padding=0, bias=False)
-        self.stage6 = self._make_shared_stage(3, 96, 160, 1, 6, self.shared_basis_4)
+        self.shared_basis_4=  nn.Conv2d(160, 160*6, kernel_size=1, stride=1, padding=0, bias=False)  
+        self.stage6 = self._make_shared_stage(3, 96, 160, 2, 6, self.shared_basis_4)  # 1->2 for ilsvrc
 
         self.stage7 = Block(160, 320, 6, 1)
 
@@ -105,7 +110,12 @@ class MobileNetV2_Shared(nn.Module):
             nn.ReLU6(inplace=True)
         )
 
-        self.conv2 = nn.Conv2d(1280, class_num, 1)
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.2),  
+            nn.Linear(1280, class_num),
+        )
+
+        #self.conv2 = nn.Conv2d(1280, class_num, 1)
 
     def forward(self, x):
         x = self.pre(x)
@@ -118,9 +128,10 @@ class MobileNetV2_Shared(nn.Module):
         x = self.stage6(x)
         x = self.stage7(x)
         x = self.conv1(x)
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = self.conv2(x)
-        x = x.view(x.size(0), -1)
+        x = F.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
+        x = self.classifier(x)
+        #x = self.conv2(x)
+        #x = x.view(x.size(0), -1)
 
         return x
 
@@ -148,21 +159,21 @@ class MobileNetV2_Shared(nn.Module):
 
 class MobileNetV2(nn.Module):
 
-    def __init__(self, class_num=100):
+    def __init__(self, class_num=1000):
         super().__init__()
 
         self.pre = nn.Sequential(
-            nn.Conv2d(3, 32, 1, padding=1),
+            nn.Conv2d(3, 32, 3, stride=2, padding=1),   # 1x1->3x3, stride 1->2 for ilsvrc
             nn.BatchNorm2d(32),
             nn.ReLU6(inplace=True)
         )
 
-        self.stage1 = Block(32, 16, 1, 1)
+        self.stage1 = Block(32, 16, 1, 1)  # stride 2->1 for ilsvrc
         self.stage2 = self._make_stage(2, 16, 24, 2, 6)
         self.stage3 = self._make_stage(3, 24, 32, 2, 6)
         self.stage4 = self._make_stage(4, 32, 64, 2, 6)
         self.stage5 = self._make_stage(3, 64, 96, 1, 6)
-        self.stage6 = self._make_stage(3, 96, 160, 1, 6)
+        self.stage6 = self._make_stage(3, 96, 160, 2, 6)  # 1->2
         self.stage7 = Block(160, 320, 6, 1)
 
         self.conv1 = nn.Sequential(
@@ -171,7 +182,12 @@ class MobileNetV2(nn.Module):
             nn.ReLU6(inplace=True)
         )
 
-        self.conv2 = nn.Conv2d(1280, class_num, 1)
+        self.classifier = nn.Sequential(
+            nn.Dropout(0.2),  
+            nn.Linear(1280, class_num),
+        )
+
+        #self.conv2 = nn.Conv2d(1280, class_num, 1)
 
     def forward(self, x):
         x = self.pre(x)
@@ -183,9 +199,10 @@ class MobileNetV2(nn.Module):
         x = self.stage6(x)
         x = self.stage7(x)
         x = self.conv1(x)
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = self.conv2(x)
-        x = x.view(x.size(0), -1)
+        x = F.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
+        x = self.classifier(x)
+        #x = self.conv2(x)
+        #x = x.view(x.size(0), -1)
 
         return x
 
@@ -194,6 +211,7 @@ class MobileNetV2(nn.Module):
         layers = []
         layers.append(Block(in_channels, out_channels, t, stride))
 
+
         while repeat - 1:
             layers.append(Block(out_channels, out_channels, t, 1))
             repeat -= 1
@@ -201,60 +219,14 @@ class MobileNetV2(nn.Module):
         return nn.Sequential(*layers)
 
 def test():
-    net = MobileNetV2_Shared(class_num=100)
+    net = MobileNetV2_Shared(class_num=1000)
+    #net = MobileNetV2(class_num=1000)
     #print(net)
-    x = torch.randn(256,3,32,32)
+    #x = torch.randn(256,3,32,32)
+    x = torch.randn(16,3,224,224)
     y = net(x)
     #print(y.size())
-    #print(net)
+    print(net)
 
 #test()
-
-# class MobileNetV2(nn.Module):
-#     # (expansion, out_planes, num_blocks, stride)
-#     cfg = [(1,  16, 1, 1),
-#            (6,  24, 2, 1),  # NOTE: change stride 2 -> 1 for CIFAR10
-#            (6,  32, 3, 2),
-#            (6,  64, 4, 2),
-#            (6,  96, 3, 1),
-#            (6, 160, 3, 2),
-#            (6, 320, 1, 1)]
-
-#     def __init__(self, num_classes=100):
-#         super(MobileNetV2, self).__init__()
-
-#         #num_layers = sum([group[2] for group in self.cfg])
-#         #self.basic_layers=[i for i in range(num_layers)]
-#         self.basic_layers=[]
-#         self.skip_layers=[]
-#         self.skip_distance=[]
-
-#         # NOTE: change conv1 stride 2 -> 1 for CIFAR10
-#         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)
-#         self.bn1 = nn.BatchNorm2d(32)
-#         self.layers = self._make_layers(in_planes=32)
-#         self.conv2 = nn.Conv2d(320, 1280, kernel_size=1, stride=1, padding=0, bias=False)
-#         self.bn2 = nn.BatchNorm2d(1280)
-#         self.linear = nn.Linear(1280, num_classes)
-#         self.linear_skip = nn.Linear(1280, num_classes)
-
-#     def _make_layers(self, in_planes):
-#         layers = []
-#         for expansion, out_planes, num_blocks, stride in self.cfg:
-#             strides = [stride] + [1]*(num_blocks-1)
-#             for stride in strides:
-#                 layers.append(Block(in_planes, out_planes, expansion, stride))
-#                 in_planes = out_planes
-#         return nn.Sequential(*layers)
-
-#     def forward(self, x):
-#         out = F.relu(self.bn1(self.conv1(x)))
-#         out = self.layers(out)
-#         out = F.relu(self.bn2(self.conv2(out)))
-#         # NOTE: change pooling kernel_size 7 -> 4 for CIFAR10
-#         out = F.avg_pool2d(out, 4)
-#         out = out.view(out.size(0), -1)
-#         out = self.linear(out)
-#         return out
-
 

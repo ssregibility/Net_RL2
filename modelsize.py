@@ -15,21 +15,27 @@ import datetime
 
 import numpy as np
 
-from models.cifar100 import mobilenetv2
-from models.cifar100 import resnet
+#from models.cifar100 import mobilenetv2
+#from models.cifar100 import mobilenetv2_exp2
+from models.ilsvrc import mobilenetv2
 
 from ptflops import get_model_complexity_info
 
-model = mobilenetv2.MobileNetV2_Shared
+#model = mobilenetv2_exp2.MobileNetV2_Shared
+#model = mobilenetv2.MobileNetV2_Shared
 #model = mobilenetv2.MobileNetV2
 #model = resnet.ResNet34_SingleShared
+model = mobilenetv2.MobileNetV2_Shared
+#model = mobilenetv2.MobileNetV2
+
+#model = torchvision.models.mobilenet_v2
 
 with torch.cuda.device(0):
-  net = model(class_num=100)
+  net = model()
   #net = model(32,1)
   net = net.to('cuda')
-  inputsize = (3,32,32)
-  #inputsize = (3,224,224)
+  #inputsize = (3,32,32)
+  inputsize = (3,224,224)
   macs, params = get_model_complexity_info(net, inputsize, as_strings=True,
                                            print_per_layer_stat=True, verbose=False)
   print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
