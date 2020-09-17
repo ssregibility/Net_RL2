@@ -294,7 +294,7 @@ def test(epoch):
         }
         if not os.path.isdir('./checkpoint'):
             os.mkdir('./checkpoint')
-        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-" + args.visible_device + '.pth')
+        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
         best_acc = acc_top1
         best_acc_top5 = acc_top5
         print("Best_Acc_top1/5 = %.3f\t%.3f" % (best_acc, best_acc_top5))
@@ -308,31 +308,49 @@ def test(epoch):
         }
         if not os.path.isdir('./checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-" + args.visible_device + '-epoch-' + str(epoch) + '.pth')
+        torch.save(state, './checkpoint/' + 'ILSVRC-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + "epoch" + str(epoch) + '.pth')
         
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
-    if epoch > 45:
+    if epoch > 30: #45:
         lr = lr * 0.1
-    if epoch > 75:
+    if epoch > 60: #75:
         lr = lr * 0.1
-    if epoch > 110:
+    if epoch > 90: # 110:
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-        
+
+def adjust_learning_rate_mobilenetv2(optimizer, epoch, args_lr):
+    lr = args_lr
+    if epoch > 150:
+        lr = lr * 0.1
+    if epoch > 225:
+        lr = lr * 0.1
+    if epoch > 285:
+        lr = lr * 0.1
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
 best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
 if 'DoubleShared' in args.model:
     func_train = train_basis
+    rate_scheduler = adjust_learning_rate
+    total_epoches = 100 #120
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
+    rate_scheduler = adjust_learning_rate
+    total_epoches = 100 #120
 elif 'MobileNetV2_Shared' in args.model:
     func_train = train_basis_single
+    rate_scheduler = adjust_learning_rate_mobilenetv2
+    total_epoches = 300
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
@@ -342,10 +360,10 @@ if args.pretrained != None:
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     best_acc = checkpoint['acc']
     
-for i in range(args.starting_epoch,115):
+for i in range(args.starting_epoch, total_epoches):
     start = timeit.default_timer()
     
-    adjust_learning_rate(optimizer, i+1, args.lr)
+    rate_scheduler(optimizer, i+1, args.lr)
     func_train(i+1)
     test(i+1)
     
