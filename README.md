@@ -35,7 +35,7 @@ To train the models in the paper on ILSVRC2012, run this command:
 ```train
 python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --shared_rank=32 --unique_rank=1 --batch_size=512 --dataset_path=<path_to_dataset> --model=ResNet34_DoubleShared --visible_device=0,1,2,3
 ```
-To train the MobileNetV2_Shared models in the paper on ILSVRC2012, run this command:
+To train MobileNetV2_Shared model in the paper on ILSVRC2012, run this command:
 
 ```train
 python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
