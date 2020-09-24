@@ -96,6 +96,13 @@ Our model achieves the following performance on :
 | ResNet34-S48U1     |     27.88%         |      9.29%       |      9.44M     |  6.52G  | [Download](https://drive.google.com/file/d/1NHBvlYrTJzuJuKJjIdtlt5krDiXkue2r/view?usp=sharing) |
 | ResNet34-S32U1\*    |     27.69%         |      9.11%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1dtq8TaF88ELnIn4fQr4-eyMGwYCiGYVA/view?usp=sharing) |
 
+| Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |  |
+| ------------------ |---------------- | -------------- | ------------ | ----- | ----- |
+| ResNet34-S32U1\*     |     27.20%         |      8.93%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1LG-dSNjg_VrfimhoDyICU5OGir0tYdyz/view?usp=sharing) |
+| ResNet34-S48U1\*     |     26.67%         |      8.54%       |      11.79M     |  6.52G  | [Download](https://drive.google.com/file/d/12pN0JobnfgKKFX0MFNmFJ22BHTojpwIM/view?usp=sharing) |
+| MobileNetV2-Shared    |     27.61%         |      9.34%       |      3.24M     |  0.66G  | [Download](https://drive.google.com/file/d/1EWYOVj0URjc7j93ciYaRONorlPU2v4DX/view?usp=sharing) |
+
+
 Notes
 - ResNet*XX*-S*s*U*u* denotes our model based on original ResNet*XX* with *s* rank of shared filter basis and *u* rank of unique filter basis. Use ```--shared_rank=s``` and ```--unique_rank=u``` for evaluating pretrained models.
 - \* denotes having 2 shared bases in each residual block group. Use ```--model=ResNetXX-DoubleShared``` for evaluating these models. Otherwise use ```--model=ResNetXX-SingleShared```.
