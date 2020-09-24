@@ -87,7 +87,7 @@ Our model achieves the following performance on :
 | ResNet34-S32U1     |     21.79%         |      7.73M     |  1.55G  | [Download](https://drive.google.com/file/d/1DsYNhRBeqAkDGRZGa7oRXHjC0NU9M_f_/view?usp=sharing) |
 | DenseNet121-S64U4  |     22.15%         |      5.08M     |  1.43G  | [Download](https://drive.google.com/file/d/1FeLPbEAkkrT2bZTvnCrNOU3dkJxrp3-D/view?usp=sharing) |
 | ResNeXt50-S16U1    |     20.09%         |      19.3M     |  2.38G  | [Download](https://drive.google.com/file/d/1e7UlAOFqN0sMwA4jy6tvAzZsvKYpXA6e/view?usp=sharing) |
-| MobileNetV2-Shared |     27.65%         |      2.16M     |  0.14G  | [Download](https://drive.google.com/file/d/172T4AlTylTeJ1wPQgEJLh_IsL_kKPPfp/view?usp=sharing) |
+| MobileNetV2-Shared |     27.70%         |      2.16M     |  0.14G  | [Download](https://drive.google.com/file/d/1JjPHAYbEvIjg869ZysPeGI2IAwOoTe58/view?usp=sharing) |
 
 ### CIFAR-10 Classifcation
 
