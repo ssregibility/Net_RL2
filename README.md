@@ -38,7 +38,7 @@ python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10
 To train MobileNetV2_Shared model in the paper on ILSVRC2012, run this command:
 
 ```train
-python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
+python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=2e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
 ```
 
 ## Evaluation
@@ -87,7 +87,7 @@ Our model achieves the following performance on :
 | ResNet34-S32U1     |     21.79%         |      7.73M     |  1.55G  | [Download](https://drive.google.com/file/d/1DsYNhRBeqAkDGRZGa7oRXHjC0NU9M_f_/view?usp=sharing) |
 | DenseNet121-S64U4  |     22.15%         |      5.08M     |  1.43G  | [Download](https://drive.google.com/file/d/1FeLPbEAkkrT2bZTvnCrNOU3dkJxrp3-D/view?usp=sharing) |
 | ResNeXt50-S16U1    |     20.09%         |      19.3M     |  2.38G  | [Download](https://drive.google.com/file/d/1e7UlAOFqN0sMwA4jy6tvAzZsvKYpXA6e/view?usp=sharing) |
-| MobileNetV2-Shared |     27.65%         |      2.16M     |  0.14G  | [Download]() |
+| MobileNetV2-Shared |     27.65%         |      2.16M     |  0.14G  | [Download](https://drive.google.com/file/d/172T4AlTylTeJ1wPQgEJLh_IsL_kKPPfp/view?usp=sharing) |
 
 ### CIFAR-10 Classifcation
 
