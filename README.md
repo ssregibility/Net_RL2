@@ -1,7 +1,8 @@
 # Learning Deeply Shared Filter Bases for Efficient ConvNets
 
 Official implementation of [**Learning Deeply Shared Filter Bases for Efficient ConvNets**](https://arxiv.org/abs/2006.05066)
-- In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, thatcan be deeply shared, and the remaining layer-specific part.  - - Since a filter basisis a fundamental building block constituting high dimensional convolution filters,it can be more naturally shared across many convolution layers while retainingthe representation power of individual layers via re-parameterization with a smallamount of layer-specific parameters.
+- In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, thatcan be deeply shared, and the remaining layer-specific part.
+- Since a filter basisis a fundamental building block constituting high dimensional convolution filters,it can be more naturally shared across many convolution layers while retainingthe representation power of individual layers via re-parameterization with a smallamount of layer-specific parameters.
 
 ## Requirements
 
