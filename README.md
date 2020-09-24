@@ -1,9 +1,7 @@
-# Learning Shared Filter Bases for Efficient ConvNets
+# Learning Deeply Shared Filter Bases for Efficient ConvNets
 
-Official implementation of **Learning Shared Filter Bases for Efficient ConvNets**, a NeurIPS-2020 submission.
--  Unlike normal convolution in (a), our method in (b) replaces the original layer (given by *W*) by two layers (given by filter basis *W<sub>basis</sub>* and coefficients α). While most components of *W<sub>basis</sub>* are shared across many convolution layers, some are not shared and unique to each layer, allowing layer-specific peculiarity and more representation power of the network. 
-- In overparameterized networks, our method outperforms much deeper counterpart original networks while reducing parameters and computational costs substantially.
-![Image](images/conv_decomp.jpg?raw=true)
+Official implementation of [**Learning Deeply Shared Filter Bases for Efficient ConvNets**](https://arxiv.org/abs/2006.05066)
+- In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, thatcan be deeply shared, and the remaining layer-specific part.  - - Since a filter basisis a fundamental building block constituting high dimensional convolution filters,it can be more naturally shared across many convolution layers while retainingthe representation power of individual layers via re-parameterization with a smallamount of layer-specific parameters.
 
 ## Requirements
 
