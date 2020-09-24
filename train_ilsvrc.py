@@ -26,10 +26,10 @@ parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES'
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, MobileNetV2, MobileNetV2_Shared')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, MobileNetV2, MobileNetV2_Shared')
 args = parser.parse_args()
 
-from models.ilsvrc import resnet, mobilenetv2, mobilenetv2_orig
+from models.ilsvrc import resnet, mobilenetv2
 dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet34':resnet.ResNet34, \
     'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, \
@@ -54,8 +54,6 @@ if 'DoubleShared' in args.model or 'SingleShared' in args.model:
 else:
     net = dic_model[args.model]()
 
-#net = torchvision.models.mobilenet_v2(pretrained=False)
-    
 net = net.to(device)
 
 # parallelize 
@@ -66,7 +64,8 @@ class MyDataParallel(nn.DataParallel):
         except AttributeError:
             return getattr(self.module, name)
 
-if torch.cuda.device_count() > 1:
+# For ILSVRC, we use DataParallel in default
+if torch.cuda.device_count() >= 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
     net = MyDataParallel(net)
@@ -75,8 +74,12 @@ if torch.cuda.device_count() > 1:
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
-#Training for standard models
+
 def train(epoch):
+    """
+    Training for original models
+    """
+
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
       
@@ -111,10 +114,11 @@ def train(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-# Training for parameter shraed models
-# Use the property of orthogonal matrices;
-# e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch):
+
+def train_basis_double(epoch):
+    """
+    Training for models sharing double-bases 
+    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -184,8 +188,12 @@ def train_basis(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
     
-# Training for parameter shraed models, single basis
+
 def train_basis_single(epoch):
+    """
+    Training for models sharing single-bases 
+    """
+
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -253,7 +261,8 @@ def train_basis_single(epoch):
     
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
-        
+
+
 #Test for models
 def test(epoch):
     global best_acc
@@ -278,7 +287,6 @@ def test(epoch):
             
             total += targets.size(0)
             
-    # Save checkpoint.
     # Save checkpoint.
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
@@ -313,15 +321,16 @@ def test(epoch):
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
-    if epoch > 30: #45:
+    if epoch > 60: #30: #45:
         lr = lr * 0.1
-    if epoch > 60: #75:
+    if epoch > 100: #60: #75:
         lr = lr * 0.1
-    if epoch > 90: # 110:
+    if epoch > 140: #140: #90: # 110:
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
 
 def adjust_learning_rate_mobilenetv2(optimizer, epoch, args_lr):
     lr = args_lr
@@ -340,9 +349,9 @@ best_acc_top5 = 0
 
 func_train = train
 if 'DoubleShared' in args.model:
-    func_train = train_basis
+    func_train = train_basis_double
     rate_scheduler = adjust_learning_rate
-    total_epoches = 100 #120
+    total_epoches = 150 #100 #120
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate

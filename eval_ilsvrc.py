@@ -21,17 +21,23 @@ parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet18, ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, MobileNetV2, MobileNetV2_Shared')
 args = parser.parse_args()
 
-from models.ilsvrc import resnet
-dic_model = {'ResNet18': resnet.ResNet18, 'ResNet34':resnet.ResNet34, 'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, 'ResNet34_SingleShared':resnet.ResNet34_SingleShared}
+from models.ilsvrc import resnet, mobilenetv2
+dic_model = {'ResNet18': resnet.ResNet18, \
+    'ResNet34':resnet.ResNet34, \
+    'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, \
+    'ResNet34_SingleShared':resnet.ResNet34_SingleShared, \
+    'MobileNetV2':mobilenetv2.MobileNetV2, \
+    'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}
+
     
 if args.model not in dic_model:
     print("The model is currently not supported")
     sys.exit()
 
-testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=4)
+testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=8)
 
 #args.visible_device sets which cuda devices to be used
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
@@ -44,6 +50,21 @@ else:
     net = dic_model[args.model]()
     
 net = net.to(device)
+
+# parallelize 
+class MyDataParallel(nn.DataParallel):
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.module, name)
+
+# For ILSVRC, we use DataParallel in default
+if torch.cuda.device_count() >= 1:
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+    net = MyDataParallel(net)
+
 
 #Eval for models
 def evaluation():
