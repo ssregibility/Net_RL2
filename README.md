@@ -38,7 +38,7 @@ python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10
 To train MobileNetV2_Shared model in the paper on ILSVRC2012, run this command:
 
 ```train
-python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=2e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
+python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
 ```
 
 ## Evaluation
