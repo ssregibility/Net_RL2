@@ -39,7 +39,7 @@ dic_model = {'ResNet18': resnet.ResNet18, \
         'DenseNet121_SingleShared':densenet.DenseNet121_SingleShared, \
         'ResNext50':resnext.ResNext50_32x4d, \
         'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared, \
-        'MobileNetV2':mobilenetv2.MobileNetV2, \                    
+        'MobileNetV2':mobilenetv2.MobileNetV2, \
         'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}        
 
 if args.model not in dic_model:
