@@ -44,8 +44,6 @@ class BlockShared(nn.Module):
         self.shared_basis1 = shared_basis_1
         planes = expansion * in_planes
  
-        #self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, stride=1, padding=0, bias=False)
-        #self.basis_conv1 = nn.Conv2d(in_planes, self.unique_rank, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, groups=planes, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -60,12 +58,7 @@ class BlockShared(nn.Module):
             )
 
     def forward(self, x):
-        #print("x size #2:", x.shape)
-        #print("basis weight:", self.shared_basis1.weight.shape)
-        #print("conv1 weight:", self.conv1.weight.shape)
         out = F.relu(self.bn1(self.shared_basis1(x)))
-        #out = F.relu(self.bn1(self.conv1(x)))
-        #print("out shape:", out.shape)
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
         out = out + self.shortcut(x) if self.stride==1 else out
@@ -111,7 +104,6 @@ class MobileNetV2_Shared(nn.Module):
         x = self.pre(x)
         x = self.stage1(x)
         x = self.stage2(x)
-        #print("x size #1:", x.shape)
         x = self.stage3(x)
         x = self.stage4(x)
         x = self.stage5(x)

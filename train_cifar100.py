@@ -68,8 +68,10 @@ net = net.to(device)
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
-#Training for standard models
 def train(epoch):
+    """
+    Training for original models.
+    """
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -104,10 +106,11 @@ def train(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-# Training for parameter shraed models
-# Use the property of orthogonal matrices;
-# e.g.: AxA.T = I if A is orthogonal 
+ 
 def train_basis(epoch):
+    """
+    Training for models sharing single-bases.
+    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     

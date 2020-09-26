@@ -4,3 +4,4 @@ __pycache__/
 *.ipynb
 tee
 *.log
+.vscode/settings.json

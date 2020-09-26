@@ -31,7 +31,6 @@ dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet34_SingleShared':resnet.ResNet34_SingleShared, \
     'MobileNetV2':mobilenetv2.MobileNetV2, \
     'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}
-
     
 if args.model not in dic_model:
     print("The model is currently not supported")

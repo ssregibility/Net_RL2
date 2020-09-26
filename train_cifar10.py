@@ -30,7 +30,20 @@ parser.add_argument('--model', default="ResNet56_DoubleShared", help='ResNet20, 
 args = parser.parse_args()
 
 from models.cifar10 import resnet
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_DoubleShared':resnet.ResNet56_DoubleShared, 'ResNet32_DoubleShared':resnet.ResNet32_DoubleShared, 'ResNet56_SingleShared':resnet.ResNet56_SingleShared, 'ResNet32_SingleShared':resnet.ResNet32_SingleShared, 'ResNet56_SharedOnly':resnet.ResNet56_SharedOnly, 'ResNet32_SharedOnly':resnet.ResNet32_SharedOnly, 'ResNet56_NonShared':resnet.ResNet56_NonShared, 'ResNet32_NonShared':resnet.ResNet32_NonShared}
+dic_model = {'ResNet20': resnet.ResNet20, \
+    'ResNet32':resnet.ResNet32, \
+    'ResNet44':resnet.ResNet44, \
+    'ResNet56':resnet.ResNet56, \
+    'ResNet110':resnet.ResNet110, \
+    'ResNet1202':resnet.ResNet1202, \
+    'ResNet56_DoubleShared':resnet.ResNet56_DoubleShared, \
+    'ResNet32_DoubleShared':resnet.ResNet32_DoubleShared, \
+    'ResNet56_SingleShared':resnet.ResNet56_SingleShared, \
+    'ResNet32_SingleShared':resnet.ResNet32_SingleShared, \
+    'ResNet56_SharedOnly':resnet.ResNet56_SharedOnly, \
+    'ResNet32_SharedOnly':resnet.ResNet32_SharedOnly, \
+    'ResNet56_NonShared':resnet.ResNet56_NonShared, \
+    'ResNet32_NonShared':resnet.ResNet32_NonShared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -58,8 +71,10 @@ net = net.to(device)
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
-#Training for standard models
-def train(epoch):    
+def train(epoch): 
+    """
+    Training for original models.
+    """   
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -94,10 +109,11 @@ def train(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-# Training for parameter shraed models
-# Use the property of orthogonal matrices;
-# e.g.: AxA.T = I if A is orthogonal 
-def train_basis(epoch, include_unique_basis=True):
+
+def train_basis_double(epoch, include_unique_basis=True):
+    """
+    Training for models sharing double-bases
+    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -189,8 +205,11 @@ def train_basis(epoch, include_unique_basis=True):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
     
-# Training for parameter shraed models, in case of single shared basis per basicblock
+
 def train_basis_single(epoch, include_unique_basis=True):
+    """
+    Training for models sharing single-bases.
+    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -280,9 +299,12 @@ def train_basis_single(epoch, include_unique_basis=True):
     
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
-    
-# Training for parameter shraed models, in case of using shared bases only
+
+
 def train_basis_sharedonly(epoch):
+    """
+    Training for models sharing bases without layer-specific basis components.
+    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -422,7 +444,7 @@ best_acc_top5 = 0
 
 func_train = train
 if 'DoubleShared' in args.model:
-    func_train = train_basis
+    func_train = train_basis_double
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
 elif 'SharedOnly' in args.model:

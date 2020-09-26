@@ -30,6 +30,7 @@ parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, 
 args = parser.parse_args()
 
 from models.ilsvrc import resnet, mobilenetv2
+
 dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet34':resnet.ResNet34, \
     'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, \
@@ -355,7 +356,7 @@ if 'DoubleShared' in args.model:
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
-    total_epoches = 100 #120
+    total_epoches = 150 #120
 elif 'MobileNetV2_Shared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate_mobilenetv2

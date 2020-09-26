@@ -25,7 +25,20 @@ parser.add_argument('--model', default="ResNet56_DoubleShared", help='ResNet20, 
 args = parser.parse_args()
 
 from models.cifar10 import resnet
-dic_model = {'ResNet20': resnet.ResNet20, 'ResNet32':resnet.ResNet32,'ResNet44':resnet.ResNet44,'ResNet56':resnet.ResNet56, 'ResNet110':resnet.ResNet110, 'ResNet1202':resnet.ResNet1202, 'ResNet56_DoubleShared':resnet.ResNet56_DoubleShared, 'ResNet32_DoubleShared':resnet.ResNet32_DoubleShared, 'ResNet56_SingleShared':resnet.ResNet56_SingleShared, 'ResNet32_SingleShared':resnet.ResNet32_SingleShared, 'ResNet56_SharedOnly':resnet.ResNet56_SharedOnly, 'ResNet32_SharedOnly':resnet.ResNet32_SharedOnly, 'ResNet56_NonShared':resnet.ResNet56_NonShared, 'ResNet32_NonShared':resnet.ResNet32_NonShared}
+dic_model = {'ResNet20': resnet.ResNet20, \
+    'ResNet32':resnet.ResNet32, \
+    'ResNet44':resnet.ResNet44, \
+    'ResNet56':resnet.ResNet56, \
+    'ResNet110':resnet.ResNet110, \
+    'ResNet1202':resnet.ResNet1202, \
+    'ResNet56_DoubleShared':resnet.ResNet56_DoubleShared, \
+    'ResNet32_DoubleShared':resnet.ResNet32_DoubleShared, \
+    'ResNet56_SingleShared':resnet.ResNet56_SingleShared, \
+    'ResNet32_SingleShared':resnet.ResNet32_SingleShared, \
+    'ResNet56_SharedOnly':resnet.ResNet56_SharedOnly, \
+    'ResNet32_SharedOnly':resnet.ResNet32_SharedOnly, \
+    'ResNet56_NonShared':resnet.ResNet56_NonShared, \
+    'ResNet32_NonShared':resnet.ResNet32_NonShared}
     
 if args.model not in dic_model:
     print("The model is currently not supported")
