@@ -2,7 +2,7 @@
 
 This work proposes an efficient and effective parameter-sharing structure and training mechanism for ConvNets.
 - In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, that can be shared recursively, and layer-specific parts.
-- We conjecture that a shared filter basis combined with a small amount of layer-specific parameters can retain, or further enhance, the representation power of individual layers, if aproper training method is applied. 
+- We conjecture that a shared filter basis combined with a small amount of layer-specific parameters can retain, or further enhance, the representation power of individual layers, if a proper training method is applied. 
 
 ## Requirements
 
