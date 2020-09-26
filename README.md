@@ -1,7 +1,7 @@
 # Learning Deeply Shared Filter Bases for Efficient ConvNets
 
-This work propose an efficient parameter-sharing structure and an effective training mechanism of deeply shared parameters. 
--In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, that can be shared recursively, and layer-specific parts. 
+This work propose an efficient parameter-sharing structure and an effective training mechanism of deeply shared parameters.
+-In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, that can be shared recursively, and layer-specific parts.
 -We conjecture that a shared filter basis combined with a small amount of layer-specific parameterscan retain, or further enhance, the representation power of individual layers, if aproper training method is applied. 
 
 ## Requirements
