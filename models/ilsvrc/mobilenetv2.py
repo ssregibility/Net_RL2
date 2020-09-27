@@ -99,7 +99,6 @@ class MobileNetV2_Shared(nn.Module):
             nn.Linear(1280, class_num),
         )
 
-        #self.conv2 = nn.Conv2d(1280, class_num, 1)
 
     def forward(self, x):
         x = self.pre(x)
@@ -149,12 +148,12 @@ class MobileNetV2(nn.Module):
             nn.ReLU6(inplace=True)
         )
 
-        self.stage1 = Block(32, 16, 1, 1)  # stride 2->1 for ilsvrc
+        self.stage1 = Block(32, 16, 1, 1)  
         self.stage2 = self._make_stage(2, 16, 24, 2, 6)
         self.stage3 = self._make_stage(3, 24, 32, 2, 6)
         self.stage4 = self._make_stage(4, 32, 64, 2, 6)
         self.stage5 = self._make_stage(3, 64, 96, 1, 6)
-        self.stage6 = self._make_stage(3, 96, 160, 2, 6)  # 1->2
+        self.stage6 = self._make_stage(3, 96, 160, 2, 6)  # 1->2 for ilsvrc
         self.stage7 = Block(160, 320, 6, 1)
 
         self.conv1 = nn.Sequential(
@@ -182,8 +181,6 @@ class MobileNetV2(nn.Module):
         x = self.conv1(x)
         x = F.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
         x = self.classifier(x)
-        #x = self.conv2(x)
-        #x = x.view(x.size(0), -1)
 
         return x
 
