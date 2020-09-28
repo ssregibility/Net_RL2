@@ -349,6 +349,9 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
+total_epoches = 150
+rate_scheduler = adjust_learning_rate
+
 if 'DoubleShared' in args.model:
     func_train = train_basis_double
     rate_scheduler = adjust_learning_rate
@@ -357,8 +360,12 @@ elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
     total_epoches = 150 #120
-elif 'MobileNetV2_Shared' in args.model:
+elif 'MobileNetV2_Shared' == args.model:
     func_train = train_basis_single
+    rate_scheduler = adjust_learning_rate_mobilenetv2
+    total_epoches = 300
+elif 'MobileNetV2' == args.model:
+    func_train = train
     rate_scheduler = adjust_learning_rate_mobilenetv2
     total_epoches = 300
 
