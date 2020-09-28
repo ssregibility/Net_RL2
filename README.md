@@ -1,6 +1,6 @@
 # Learning Deeply Shared Filter Bases for Efficient ConvNets
 
-This work proposes an efficient and effective parameter-sharing structure and training mechanism for ConvNets.
+This work proposes a recursive parameter-sharing structure and training mechanism for ConvNets.
 - In the proposed ConvNet architecture, convolution layers are decomposed into a filter basis, that can be shared recursively, and layer-specific parts.
 - We conjecture that a shared filter basis combined with a small amount of layer-specific parameters can retain, or further enhance, the representation power of individual layers, if a proper training method is applied. 
 
@@ -38,7 +38,7 @@ python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10
 To train MobileNetV2_Shared model in the paper on ILSVRC2012, run this command:
 
 ```train
-python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-4 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
+python3 train_ilsvrc.py --lr=0.1 --momentum=0.9 --weight_decay=1e-5 --lambdaR=10 --batch_size=512 --dataset_path=<path_to_dataset> --model=MobileNetV2_Shared --visible_device=0,1,2,3
 ```
 
 ## Evaluation
@@ -104,6 +104,7 @@ Our model achieves the following performance on :
 
 | Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |  |
 | ------------------ |---------------- | -------------- | ------------ | ----- | ----- |
+| ResNet34-S32U1     |     27.83%         |      9.42%       |      8.20M     |  4.98G  | [Download](https://drive.google.com/file/d/1mGZ5-m4x69MjEC-ldraoOBPHtp-TPVRX/view?usp=sharing) |
 | ResNet34-S32U1\*     |     27.20%         |      8.93%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1LG-dSNjg_VrfimhoDyICU5OGir0tYdyz/view?usp=sharing) |
 | ResNet34-S48U1\*     |     26.67%         |      8.54%       |      11.79M     |  6.52G  | [Download](https://drive.google.com/file/d/12pN0JobnfgKKFX0MFNmFJ22BHTojpwIM/view?usp=sharing) |
 | MobileNetV2-Shared    |     27.61%         |      9.34%       |      3.24M     |  0.66G  | [Download](https://drive.google.com/file/d/1EWYOVj0URjc7j93ciYaRONorlPU2v4DX/view?usp=sharing) |
