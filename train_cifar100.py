@@ -13,6 +13,11 @@ import argparse
 import utils
 import timeit
 
+import matplotlib.pyplot as plt 
+from matplotlib.lines import Line2D
+import numpy as np
+
+
 #Possible arguments
 parser = argparse.ArgumentParser(description='Following arguments are used for the script')
 parser.add_argument('--lr', default=0.1, type=float, help='Learning Rate')
@@ -40,7 +45,8 @@ dic_model = {'ResNet18': resnet.ResNet18, \
         'ResNext50':resnext.ResNext50_32x4d, \
         'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared, \
         'MobileNetV2':mobilenetv2.MobileNetV2, \
-        'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}        
+        'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared, \
+        'MobileNetV2_SharedDouble':mobilenetv2.MobileNetV2_SharedDouble}        
 
 if args.model not in dic_model:
     print("The model is currently not supported")
@@ -64,7 +70,40 @@ else:
     net = dic_model[args.model]()
     
 net = net.to(device)
-                    
+
+def plot_grad_flow(named_parameters, epoch, ortho='ortho', bn='bn'):
+    '''Plots the gradients flowing through different layers in the net during training.
+    Can be used for checking for possible gradient vanishing / exploding problems.
+    
+    Usage: Plug this function in Trainer class after loss.backwards() as 
+    "plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow'''
+    ave_grads = []
+    max_grads= []
+    layers = []
+    for n, p in named_parameters:
+        #if(p.requires_grad) and ("bias" not in n):
+        if (p.requires_grad) and (("shared_basis" in n)):
+            layers.append(n)
+            ave_grads.append(p.grad.abs().mean())
+            max_grads.append(p.grad.abs().max())
+    
+    #plt.plot(np.arange(len(max_grads))+1, max_grads, alpha=0.3, color='c')
+    #plt.plot(np.arange(len(ave_grads))+1, ave_grads, alpha=0.3, color='b')
+    plt.bar(np.arange(1, len(max_grads)+1), max_grads, alpha=0.1, lw=0.5, color="c")
+    plt.bar(np.arange(1, len(max_grads)+1), ave_grads, alpha=0.1, lw=0.5, color="b")
+    #plt.hlines(0, 0, len(ave_grads)+1, lw=2, color="k" )
+    plt.xticks(range(0,len(ave_grads)+1))
+    plt.xlim(left=0, right=len(ave_grads)+1)
+    plt.ylim(bottom = -0.001, top=0.02) # zoom in on the lower gradient regions
+    plt.xlabel("Shared Basis")
+    plt.ylabel("absolute average gradient")
+    #plt.title("Gradient flow")
+    plt.grid(True)
+    plt.legend([Line2D([0], [0], color="c", lw=4),
+                 Line2D([0], [0], color="b", lw=4)], ['max-gradient', 'mean-gradient'])
+    plt.savefig('images/gradflow-{}-{}-{}.png'.format(ortho, bn, epoch))
+
+
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
@@ -79,6 +118,8 @@ def train(epoch):
     correct_top5 = 0
     total = 0
     
+    #plt.figure()
+
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -98,7 +139,9 @@ def train(epoch):
         if (batch_idx == 0):
             print("accuracy_loss: %.6f" % loss)
         loss.backward()
-        optimizer.step()
+        # if (batch_idx % 10 ==0 and epoch % 10 == 0):
+        #     plot_grad_flow(net.named_parameters(), epoch, "noortho")
+        # optimizer.step()
         
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
@@ -118,6 +161,8 @@ def train_basis(epoch):
     correct_top5 = 0
     total = 0
     
+    #plt.figure()
+
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -168,6 +213,106 @@ def train_basis(epoch):
 
         #apply similarity loss, multiplied by args.lambdaR
         loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+        # if (batch_idx % 10 ==0 and epoch % 10 == 0):
+        #     plot_grad_flow(net.named_parameters(), epoch, "ortho")
+
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+
+def train_basis_double_mv2(epoch):
+    """
+    Training for models sharing single-bases.
+    """
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    plt.figure()
+
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # all models have 4 groups
+            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_1")
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim_1 = sim / cnt_sim
+
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # all models have 4 groups
+            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_2")
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim_2 = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim_1)
+            print("similarity loss: %.6f" % avg_sim_2)
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + (avg_sim_1+avg_sim_2) * args.lambdaR
         loss.backward()
         optimizer.step()
         
@@ -235,8 +380,11 @@ best_acc = 0
 best_acc_top5 = 0
 
 func_train = train
-if 'SingleShared' in args.model or 'SharedOnly' in args.model or '_Shared' in args.model:
+if 'SingleShared' in args.model or 'SharedOnly' in args.model or 'MobileNetV2_Shared' in args.model:
     func_train = train_basis
+    #func_train = train
+if 'MobileNetV2_SharedDouble' in args.model:
+    func_train = train_basis_double_mv2
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 

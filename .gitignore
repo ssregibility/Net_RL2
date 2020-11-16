@@ -1,6 +1,8 @@
 checkpoint/
 data/
+images/
 __pycache__/
+*.png
 *.ipynb
 tee
 *.log

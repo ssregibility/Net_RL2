@@ -26,10 +26,11 @@ from ptflops import get_model_complexity_info
 #model = mobilenetv2.MobileNetV2
 #model = resnet.ResNet34_SingleShared
 #model = mobilenetv2.MobileNetV2_Shared
+model = mobilenetv2.MobileNetV2_SharedDouble
 #model = mobilenetv2.MobileNetV2
 
 #model = torchvision.models.mobilenet_v2
-model = resnet.ResNet50_Shared
+#model = resnet.ResNet50_Shared
 #model = resnet.ResNet50
 
 with torch.cuda.device(0):
