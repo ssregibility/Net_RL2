@@ -21,7 +21,7 @@ parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="./data/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_SingleShared", help='ResNet18, ResNet34, ResNet34_SingleShared, ResNet34_NonShared, ResNet34_SharedOnly, DenseNet121, DenseNet121_SingleShared, ResNext50, ResNext50_SingleShared, MobileNetV2, MobileNetV2_Shared')
+parser.add_argument('--model', default="ResNet34_SingleShared", help='ResNet18, ResNet34, ResNet34_SingleShared, ResNet34_NonShared, ResNet34_SharedOnly, DenseNet121, DenseNet121_SingleShared, ResNext50, ResNext50_SingleShared, MobileNetV2, MobileNetV2_Shared, MobileNetV2_SharedDouble')
 args = parser.parse_args()
 
 from models.cifar100 import resnet, densenet, resnext, mobilenetv2
@@ -35,7 +35,8 @@ dic_model = {'ResNet18': resnet.ResNet18, \
         'ResNext50':resnext.ResNext50_32x4d, \
         'ResNext50_SingleShared':resnext.ResNext50_32x4d_SingleShared, \
         'MobileNetV2':mobilenetv2.MobileNetV2, \
-        'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}   
+        'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared, \
+        'MobileNetV2_SharedDouble':mobilenetv2.MobileNetV2_SharedDouble}   
         
 if args.model not in dic_model:
     print("The model is currently not supported")
