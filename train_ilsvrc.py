@@ -563,7 +563,7 @@ elif 'SingleShared' in args.model:
 elif 'ResNet50_Shared' in args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
-    total_epoches = 180 #120
+    total_epoches = 150 #120
 elif 'MobileNetV2_Shared' == args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate_mobilenetv2

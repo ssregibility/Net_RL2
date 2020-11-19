@@ -21,7 +21,7 @@ parser.add_argument('--batch_size', default=256, type=int, help='Batch_size')
 parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES')
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, MobileNetV2, MobileNetV2_Shared')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, ResNet50, ResNet50_Shared, MobileNetV2, MobileNetV2_Shared, MobileNetV2_SharedDouble')
 args = parser.parse_args()
 
 from models.ilsvrc import resnet, mobilenetv2
@@ -29,8 +29,11 @@ dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet34':resnet.ResNet34, \
     'ResNet34_DoubleShared':resnet.ResNet34_DoubleShared, \
     'ResNet34_SingleShared':resnet.ResNet34_SingleShared, \
+    'ResNet50':resnet.ResNet50, \
+    'ResNet50_Shared':resnet.ResNet50_Shared, \
     'MobileNetV2':mobilenetv2.MobileNetV2, \
-    'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared}
+    'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared, \
+    'MobileNetV2_SharedDouble':mobilenetv2.MobileNetV2_SharedDouble }
     
 if args.model not in dic_model:
     print("The model is currently not supported")

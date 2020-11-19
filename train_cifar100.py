@@ -225,7 +225,7 @@ def train_basis(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-def train_basis_double_mv2(epoch):
+def train_basis_double_separate(epoch):
     """
     Training for models sharing single-bases.
     """
@@ -384,7 +384,7 @@ if 'SingleShared' in args.model or 'SharedOnly' in args.model or 'MobileNetV2_Sh
     func_train = train_basis
     #func_train = train
 if 'MobileNetV2_SharedDouble' in args.model:
-    func_train = train_basis_double_mv2
+    func_train = train_basis_double_separate
 
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
