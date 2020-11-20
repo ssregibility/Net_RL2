@@ -91,14 +91,7 @@ Our model achieves the following performance on :
 
 | Model name         | Top 1 Error  | Params | FLOPs |   |
 | ------------------ |---------------- | ------------ | ----- | ----- |
-<!---
-| ResNet32-S8U1      |     8.08%         |      0.15M     |  0.10G  | [Download](https://drive.google.com/file/d/1X-L2JLkENiRkQ17h5bfi7zrVIBj3_yx8/view?usp=sharing) |
-| ResNet32-S16U1     |     7.43%         |      0.20M     |  0.16G  | [Download](https://drive.google.com/file/d/1svowDpevZCeOvgMzHSrwwOgBFBu383g-/view?usp=sharing) | 
---->
 | ResNet32-S16U1\*    |     6.93%         |      0.24M     |  0.16G  | [Download](https://drive.google.com/file/d/1lGqQJEjMVr-ruMV61byFAPJVFJwU2xEU/view?usp=sharing) |
-<!---
-| ResNet56-S8U1      |     7.52%         |      0.20M     |  0.17G  | [Download](https://drive.google.com/file/d/1e77A4ALCVgbN2FwB6bE6I-A2tfUKKcV3/view?usp=sharing) | 
---->
 | ResNet56-S16U1     |     7.46%         |      0.22M     |  0.30G | [Download](https://drive.google.com/file/d/1QBdflDIqV254P1sKEeLSVGjnHpn-KPGi/view?usp=sharing) |
 | ResNet56-S16U1\*    |     6.30%         |      0.31M     |  0.30G  | [Download](https://drive.google.com/file/d/1CMtt0vOWQcJXKJ98zfRx00XjOEiZEFAD/view?usp=sharing) |
 
@@ -107,9 +100,6 @@ Our model achieves the following performance on :
 | Model name         | Top 1 Error  | Top 5 Error | Params | FLOPs |  |
 | ------------------ |---------------- | -------------- | ------------ | ----- | ----- |
 | ResNet34-S32U1     |     27.83%         |      9.42%       |      8.20M     |  4.98G  | [Download](https://drive.google.com/file/d/1mGZ5-m4x69MjEC-ldraoOBPHtp-TPVRX/view?usp=sharing) |
-<!--- 
-| ResNet34-S32U1\*     |     27.20%         |      8.93%       |      9.76M     |  4.98G  | [Download](https://drive.google.com/file/d/1LG-dSNjg_VrfimhoDyICU5OGir0tYdyz/view?usp=sharing) | 
---->
 | ResNet34-S48U1\*     |     26.67%         |      8.54%       |      11.79M     |  6.52G  | [Download](https://drive.google.com/file/d/12pN0JobnfgKKFX0MFNmFJ22BHTojpwIM/view?usp=sharing) |
 | ResNet50-Shared     |     23.95%         |      7.14%       |      18.26M     |  8.22G  | [Download](https://drive.google.com/file/d/16XIdAqjqkePCw-Ppf3z2yPUbKNFhXbGl/view?usp=sharing) |
 | MobileNetV2-Shared    |     27.61%         |      9.34%       |      3.24M     |  0.66G  | [Download](https://drive.google.com/file/d/1EWYOVj0URjc7j93ciYaRONorlPU2v4DX/view?usp=sharing) |
