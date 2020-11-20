@@ -82,16 +82,9 @@ Our model achieves the following performance on :
 
 | Model name         | Top 1 Error  | Params | FLOPs |  |
 | ------------------ |---------------- | ------------ | ----- |----|
-<!---
-| ResNet34-S8U1      |     23.11%         |      5.87M     |  0.79G  | [Download](https://drive.google.com/file/d/1x98ur2Z6HHAaUWKeYPlqrN1VFbySXKqd/view?usp=sharing) |
-| ResNet34-S16U1     |     22.64%         |      6.49M     |  1.05G  | [Download](https://drive.google.com/file/d/18ROzpBVNoIcmqMrwOQ8C9-32XuKghaFD/view?usp=sharing) | 
---->
 | ResNet34-S32U1     |     21.79%         |      7.73M     |  1.55G  | [Download](https://drive.google.com/file/d/1DsYNhRBeqAkDGRZGa7oRXHjC0NU9M_f_/view?usp=sharing) |
 | DenseNet121-S64U4  |     22.15%         |      5.08M     |  1.43G  | [Download](https://drive.google.com/file/d/1FeLPbEAkkrT2bZTvnCrNOU3dkJxrp3-D/view?usp=sharing) |
 | ResNeXt50-S16U1    |     20.09%         |      19.3M     |  2.38G  | [Download](https://drive.google.com/file/d/1e7UlAOFqN0sMwA4jy6tvAzZsvKYpXA6e/view?usp=sharing) |
-<!---| 
-MobileNetV2-Shared |     27.70%         |      2.16M     |  0.14G  | [Download](https://drive.google.com/file/d/1JjPHAYbEvIjg869ZysPeGI2IAwOoTe58/view?usp=sharing) | 
---->
 | MobileNetV2-SharedDouble |     27.54%         |      1.90M     |  0.14G  | [Download](https://drive.google.com/file/d/1V1cPxGyCGO0Fx-W2r9Wpfy81ByKypFuI/view?usp=sharing) |
 
 ### CIFAR-10 Classifcation
