@@ -13,10 +13,6 @@ import argparse
 import utils
 import timeit
 
-import matplotlib.pyplot as plt 
-from matplotlib.lines import Line2D
-import numpy as np
-
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='Following arguments are used for the script')
@@ -71,39 +67,6 @@ else:
     
 net = net.to(device)
 
-def plot_grad_flow(named_parameters, epoch, ortho='ortho', bn='bn'):
-    '''Plots the gradients flowing through different layers in the net during training.
-    Can be used for checking for possible gradient vanishing / exploding problems.
-    
-    Usage: Plug this function in Trainer class after loss.backwards() as 
-    "plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow'''
-    ave_grads = []
-    max_grads= []
-    layers = []
-    for n, p in named_parameters:
-        #if(p.requires_grad) and ("bias" not in n):
-        if (p.requires_grad) and (("shared_basis" in n)):
-            layers.append(n)
-            ave_grads.append(p.grad.abs().mean())
-            max_grads.append(p.grad.abs().max())
-    
-    #plt.plot(np.arange(len(max_grads))+1, max_grads, alpha=0.3, color='c')
-    #plt.plot(np.arange(len(ave_grads))+1, ave_grads, alpha=0.3, color='b')
-    plt.bar(np.arange(1, len(max_grads)+1), max_grads, alpha=0.1, lw=0.5, color="c")
-    plt.bar(np.arange(1, len(max_grads)+1), ave_grads, alpha=0.1, lw=0.5, color="b")
-    #plt.hlines(0, 0, len(ave_grads)+1, lw=2, color="k" )
-    plt.xticks(range(0,len(ave_grads)+1))
-    plt.xlim(left=0, right=len(ave_grads)+1)
-    plt.ylim(bottom = -0.001, top=0.02) # zoom in on the lower gradient regions
-    plt.xlabel("Shared Basis")
-    plt.ylabel("absolute average gradient")
-    #plt.title("Gradient flow")
-    plt.grid(True)
-    plt.legend([Line2D([0], [0], color="c", lw=4),
-                 Line2D([0], [0], color="b", lw=4)], ['max-gradient', 'mean-gradient'])
-    plt.savefig('images/gradflow-{}-{}-{}.png'.format(ortho, bn, epoch))
-
-
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
@@ -118,8 +81,6 @@ def train(epoch):
     correct_top5 = 0
     total = 0
     
-    #plt.figure()
-
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -139,9 +100,7 @@ def train(epoch):
         if (batch_idx == 0):
             print("accuracy_loss: %.6f" % loss)
         loss.backward()
-        # if (batch_idx % 10 ==0 and epoch % 10 == 0):
-        #     plot_grad_flow(net.named_parameters(), epoch, "noortho")
-        # optimizer.step()
+        optimizer.step()
         
     acc_top1 = 100.*correct_top1/total
     acc_top5 = 100.*correct_top5/total
@@ -214,9 +173,6 @@ def train_basis(epoch):
         #apply similarity loss, multiplied by args.lambdaR
         loss = loss + avg_sim * args.lambdaR
         loss.backward()
-        # if (batch_idx % 10 ==0 and epoch % 10 == 0):
-        #     plot_grad_flow(net.named_parameters(), epoch, "ortho")
-
         optimizer.step()
         
     acc_top1 = 100.*correct_top1/total
