@@ -132,14 +132,14 @@ class BasicBlock_SingleShared(nn.Module):
 
     def forward(self, x):
         out = torch.cat((self.basis_conv1(x), self.shared_basis(x)),dim=1)
-        out = self.basis_bn1(out)
+        out = self.basis_bn1(out)  # comment out to disable unshared BNs
         out = self.coeff_conv1(out)
         
-        out = self.bn1(out)
+        out = self.bn1(out)     # comment out to disable unshared BNs
         out = F.relu(out, inplace=True)
 
         out = torch.cat((self.basis_conv2(out), self.shared_basis(out)),dim=1)
-        out = self.basis_bn2(out)
+        out = self.basis_bn2(out)   # comment out to disable unshared BNs
         out = self.coeff_conv2(out)
         
         out = self.bn2(out)

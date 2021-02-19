@@ -13,6 +13,9 @@ import argparse
 import utils
 import timeit
 
+import matplotlib.pyplot as plt 
+from matplotlib.lines import Line2D
+import numpy as np
 
 #Possible arguments
 parser = argparse.ArgumentParser(description='Following arguments are used for the script')
@@ -70,10 +73,11 @@ net = net.to(device)
 #CrossEntropyLoss for accuracy loss criterion
 criterion = nn.CrossEntropyLoss()
 
+"""
+Training original models.
+"""
 def train(epoch):
-    """
-    Training for original models.
-    """
+
     print('\nCuda ' + args.visible_device + ' Epoch: %d' % epoch)
     net.train()
     
@@ -108,11 +112,11 @@ def train(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
- 
+
+"""
+Training models that share a single-basis.
+""" 
 def train_basis(epoch):
-    """
-    Training for models sharing single-bases.
-    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -181,10 +185,12 @@ def train_basis(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
+
+"""
+Training models that have 2 bases in each residual block.
+e.g., MobileNetV2 with CIFAR100 have 2 separate bases in each block
+"""
 def train_basis_double_separate(epoch):
-    """
-    Training for models sharing single-bases.
-    """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
     
@@ -192,7 +198,7 @@ def train_basis_double_separate(epoch):
     correct_top5 = 0
     total = 0
     
-    plt.figure()
+    #plt.figure()
 
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
@@ -278,8 +284,197 @@ def train_basis_double_separate(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-                                
-#Test for models
+
+'''
+Plots the gradients flowing through different layers in the net during training.
+Can be used for checking for possible gradient vanishing / exploding problems.
+
+Usage: Plug this function in train routine after loss.backwards() as 
+"plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow
+'''
+def plot_grad_flow(named_parameters, epoch, ortho='ortho', bn='bn'):
+    ave_grads = []
+    max_grads= []
+    layers = []
+    for n, p in named_parameters:
+        #if(p.requires_grad) and ("bias" not in n):
+        if (p.requires_grad) and (("shared_basis" in n)):
+            layers.append(n)
+            ave_grads.append(p.grad.abs().mean())
+            max_grads.append(p.grad.abs().max())
+    
+    plt.bar(np.arange(1, len(max_grads)+1), max_grads, alpha=0.1, lw=0.5, color="c")
+    plt.bar(np.arange(1, len(max_grads)+1), ave_grads, alpha=0.1, lw=0.5, color="b")
+    plt.yticks([], fontsize=15)
+    plt.xticks(range(1,len(ave_grads)+1), fontsize=15)
+    plt.xlim(left=0.4, right=len(ave_grads)+0.6)
+    plt.ylim(bottom = 0, top=0.015) # zoom in on the lower gradient regions
+    plt.xlabel("Shared Basis", fontsize=20)
+    #plt.ylabel("Average Gradient", fontsize=20)
+    plt.grid(True)
+    #plt.legend([Line2D([0], [0], color="c", lw=4), Line2D([0], [0], color="b", lw=4)], ['max-gradient', 'mean-gradient'], fontsize=20)
+    plt.savefig('images/gradflow-{}-{}-{}.pdf'.format(ortho, bn, epoch))
+
+
+"""
+Train original models & collect gradient data.
+
+Note: Adust BNs in models/cifar100/resnet.py to see the effect of BNs.
+"""
+def train_gradflow(epoch):
+    print('\n[train]Cuda ' + args.visible_device + ' Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    #plt.figure()
+
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+                        
+        loss = criterion(outputs, targets)
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+        loss.backward()
+
+        if (batch_idx ==0 and epoch % 2 == 0):
+            filename="experi/gradflow-noortho-nobn2"
+            f_mean = open("{}-mean-{}.txt".format(filename, epoch),"w+")
+            f_max = open("{}-max-{}.txt".format(filename, epoch),"w+")
+        if (batch_idx % 10 ==0 and epoch % 2 == 0):
+            #plot_grad_flow(net.named_parameters(), epoch, "ortho")
+            ave_grads = ""
+            max_grads = ""
+            for n, p in net.named_parameters():
+                if (p.requires_grad) and (("shared_basis" in n)):
+                    ave_grads += "{}\t".format(p.grad.abs().mean())
+                    max_grads += "{}\t".format(p.grad.abs().max())
+            f_mean.write("{}\n".format(ave_grads))
+            f_max.write("{}\n".format(max_grads))
+        if (batch_idx == (len(trainloader)-1) and epoch % 2 == 0 ):
+            f_mean.close()
+            f_max.close()
+        
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+
+ 
+"""
+Train single-basis models & collect gradient data
+
+Note: Adust BNs in models/cifar100/resnet.py to see the effect of BNs.
+"""
+def train_basis_gradflow(epoch):
+    print('\n[train_basis]Cuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    #plt.figure()
+
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # all models have 4 groups
+            shared_basis = getattr(net,"shared_basis_"+str(gid))
+
+            num_shared_basis = shared_basis.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis.weight,)
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim)
+
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+
+        if (batch_idx ==0 and epoch % 2 == 0):
+            filename="experi/gradflow-ortho-nobn"
+            f_mean = open("{}-mean-{}.txt".format(filename, epoch),"w+")
+            f_max = open("{}-max-{}.txt".format(filename, epoch),"w+")
+        if (batch_idx % 10 ==0 and epoch % 2 == 0):
+            #plot_grad_flow(net.named_parameters(), epoch, "ortho")
+            ave_grads = ""
+            max_grads = ""
+            for n, p in net.named_parameters():
+                if (p.requires_grad) and (("shared_basis" in n)):
+                    ave_grads += "{}\t".format(p.grad.abs().mean())
+                    max_grads += "{}\t".format(p.grad.abs().max())
+            f_mean.write("{}\n".format(ave_grads))
+            f_max.write("{}\n".format(max_grads))
+        if (batch_idx == (len(trainloader)-1) and epoch % 2 == 0 ):
+            f_mean.close()
+            f_max.close()
+
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+
+
+'''
+Test for models
+'''
 def test(epoch):
     global best_acc
     global best_acc_top5
@@ -322,6 +517,7 @@ def test(epoch):
         print("Best_Acc_top1 = %.3f" % acc_top1)
         print("Best_Acc_top5 = %.3f" % acc_top5)
         
+
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
     if epoch > 150:
