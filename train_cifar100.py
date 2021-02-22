@@ -349,6 +349,7 @@ def train_gradflow(epoch):
 Train single-basis models & collect gradient data
 
 Note: Adust BNs in models/cifar100/resnet.py to see the effect of BNs.
+Note: Use gradflow.ipynb notebook to visulize the data.
 """
 def train_basis_gradflow(epoch):
     print('\n[train_basis]Cuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
@@ -358,8 +359,6 @@ def train_basis_gradflow(epoch):
     correct_top5 = 0
     total = 0
     
-    #plt.figure()
-
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -417,7 +416,6 @@ def train_basis_gradflow(epoch):
             f_mean = open("{}-mean-{}.txt".format(filename, epoch),"w+")
             f_max = open("{}-max-{}.txt".format(filename, epoch),"w+")
         if (batch_idx % 10 ==0 and epoch % 2 == 0):
-            #plot_grad_flow(net.named_parameters(), epoch, "ortho")
             ave_grads = ""
             max_grads = ""
             for n, p in net.named_parameters():
