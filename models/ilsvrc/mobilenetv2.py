@@ -3,10 +3,41 @@
 See the paper "Inverted Residuals and Linear Blocks:
 Mobile Networks for Classification, Detection and Segmentation" for more details.
 '''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+'''
+    ECA-Net's channel attention module.
+'''
+class eca_layer(nn.Module):
+    """Constructs a ECA module.
+    Args:
+        channel: Number of channels of the input feature map
+        k_size: Adaptive selection of kernel size
+    """
+    def __init__(self, channel, k_size=3):
+        super(eca_layer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False) 
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # x: input features with shape [b, c, h, w]
+        b, c, h, w = x.size()
+
+        # feature descriptor on the global spatial information
+        y = self.avg_pool(x)
+
+        # Two different branches of ECA module
+        y = self.conv(y.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+
+        # Multi-scale information fusion
+        y = self.sigmoid(y)
+
+        return x * y.expand_as(x)
 
 class Block(nn.Module):
     '''expand + depthwise + pointwise'''
@@ -81,6 +112,40 @@ class BlockSharedDouble(nn.Module):
         out = F.relu(self.bn1(self.shared_basis1(x)), inplace=True)
         out = F.relu(self.bn2(self.conv2(out)), inplace=True)
         out = self.bn3(self.shared_basis2(out))
+
+        if self.use_res_connect:
+            out = x + out
+
+        return out
+
+class BlockSharedDoubleAttention(nn.Module):
+    '''expand + depthwise + pointwise'''
+    def __init__(self, in_planes, out_planes, expansion, stride, shared_basis_1, shared_basis_2):
+        super(BlockSharedDouble, self).__init__()
+        self.stride = stride
+        self.shared_basis1 = shared_basis_1
+        self.shared_basis2 = shared_basis_2
+        planes = expansion * in_planes
+ 
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, groups=planes, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        #self.conv3 = nn.Conv2d(planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
+        self.bn3 = nn.BatchNorm2d(out_planes)
+
+        # exp: channel attention
+        k_size = 3
+        self.chan_attention = eca_layer(out_planes, k_size)
+
+        self.use_res_connect = self.stride == 1 and in_planes == out_planes
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.shared_basis1(x)), inplace=True)
+        out = F.relu(self.bn2(self.conv2(out)), inplace=True)
+        out = self.bn3(self.shared_basis2(out))
+
+        # exp: channel attention
+        out = self.chan_attention(out)
 
         if self.use_res_connect:
             out = x + out
@@ -243,6 +308,8 @@ class MobileNetV2_SharedDouble(nn.Module):
 
         while repeat - 1:
             layers.append(BlockSharedDouble(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
+            # use BlockSharedDoubleAttention to apply ECA-Net's channel attention.
+            # layers.append(BlockSharedDoubleAttention(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
             repeat -= 1
 
         return nn.Sequential(*layers)
@@ -317,5 +384,6 @@ def test():
     #print(y.size())
     print(net)
 
-#test()
+if __name__ == '__main__':
+    test()
 

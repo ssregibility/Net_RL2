@@ -285,41 +285,11 @@ def train_basis_double_separate(epoch):
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
 
-'''
-Plots the gradients flowing through different layers in the net during training.
-Can be used for checking for possible gradient vanishing / exploding problems.
-
-Usage: Plug this function in train routine after loss.backwards() as 
-"plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow
-'''
-def plot_grad_flow(named_parameters, epoch, ortho='ortho', bn='bn'):
-    ave_grads = []
-    max_grads= []
-    layers = []
-    for n, p in named_parameters:
-        #if(p.requires_grad) and ("bias" not in n):
-        if (p.requires_grad) and (("shared_basis" in n)):
-            layers.append(n)
-            ave_grads.append(p.grad.abs().mean())
-            max_grads.append(p.grad.abs().max())
-    
-    plt.bar(np.arange(1, len(max_grads)+1), max_grads, alpha=0.1, lw=0.5, color="c")
-    plt.bar(np.arange(1, len(max_grads)+1), ave_grads, alpha=0.1, lw=0.5, color="b")
-    plt.yticks([], fontsize=15)
-    plt.xticks(range(1,len(ave_grads)+1), fontsize=15)
-    plt.xlim(left=0.4, right=len(ave_grads)+0.6)
-    plt.ylim(bottom = 0, top=0.015) # zoom in on the lower gradient regions
-    plt.xlabel("Shared Basis", fontsize=20)
-    #plt.ylabel("Average Gradient", fontsize=20)
-    plt.grid(True)
-    #plt.legend([Line2D([0], [0], color="c", lw=4), Line2D([0], [0], color="b", lw=4)], ['max-gradient', 'mean-gradient'], fontsize=20)
-    plt.savefig('images/gradflow-{}-{}-{}.pdf'.format(ortho, bn, epoch))
-
-
 """
 Train original models & collect gradient data.
 
 Note: Adust BNs in models/cifar100/resnet.py to see the effect of BNs.
+Note: Use gradflow.ipynb notebook to visulize the data.
 """
 def train_gradflow(epoch):
     print('\n[train]Cuda ' + args.visible_device + ' Epoch: %d' % epoch)
@@ -329,8 +299,6 @@ def train_gradflow(epoch):
     correct_top5 = 0
     total = 0
     
-    #plt.figure()
-
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -356,7 +324,6 @@ def train_gradflow(epoch):
             f_mean = open("{}-mean-{}.txt".format(filename, epoch),"w+")
             f_max = open("{}-max-{}.txt".format(filename, epoch),"w+")
         if (batch_idx % 10 ==0 and epoch % 2 == 0):
-            #plot_grad_flow(net.named_parameters(), epoch, "ortho")
             ave_grads = ""
             max_grads = ""
             for n, p in net.named_parameters():
@@ -382,6 +349,7 @@ def train_gradflow(epoch):
 Train single-basis models & collect gradient data
 
 Note: Adust BNs in models/cifar100/resnet.py to see the effect of BNs.
+Note: Use gradflow.ipynb notebook to visulize the data.
 """
 def train_basis_gradflow(epoch):
     print('\n[train_basis]Cuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
@@ -391,8 +359,6 @@ def train_basis_gradflow(epoch):
     correct_top5 = 0
     total = 0
     
-    #plt.figure()
-
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -450,7 +416,6 @@ def train_basis_gradflow(epoch):
             f_mean = open("{}-mean-{}.txt".format(filename, epoch),"w+")
             f_max = open("{}-max-{}.txt".format(filename, epoch),"w+")
         if (batch_idx % 10 ==0 and epoch % 2 == 0):
-            #plot_grad_flow(net.named_parameters(), epoch, "ortho")
             ave_grads = ""
             max_grads = ""
             for n, p in net.named_parameters():
