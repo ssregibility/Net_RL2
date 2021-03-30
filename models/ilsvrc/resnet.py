@@ -6,6 +6,37 @@ from torch.autograd import Variable
 
 import copy
 
+'''
+    ECA-Net's channel attention module.
+'''
+class eca_layer(nn.Module):
+    """Constructs a ECA module.
+    Args:
+        channel: Number of channels of the input feature map
+        k_size: Adaptive selection of kernel size
+    """
+    def __init__(self, channel, k_size=3):
+        super(eca_layer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False) 
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # x: input features with shape [b, c, h, w]
+        b, c, h, w = x.size()
+
+        # feature descriptor on the global spatial information
+        y = self.avg_pool(x)
+
+        # Two different branches of ECA module
+        y = self.conv(y.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+
+        # Multi-scale information fusion
+        y = self.sigmoid(y)
+
+        return x * y.expand_as(x)
+
+
 # BasicBlock for single basis models
 class BasicBlock_SingleShared(nn.Module):
     expansion = 1
@@ -108,7 +139,7 @@ class BasicBlock_DoubleShared(nn.Module):
         
         return out
 
-# original Bottleneck block    
+# original Bottleneck block with shared parameters
 class BottleneckBlock_Shared(nn.Module):
     expansion = 4
 
@@ -139,6 +170,49 @@ class BottleneckBlock_Shared(nn.Module):
         out = F.relu(self.bn2(self.shared_basis_1(out)))
         # out = self.bn3(self.conv3(out))
         out = self.bn3(self.shared_basis_2(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+# original Bottleneck block with shared parameters + ECA-Net's channel attention
+class BottleneckBlock_Shared_Attention(nn.Module):
+    expansion = 4
+
+    def __init__(self, in_planes, planes, shared_basis_1, shared_basis_2, stride=1):
+        super(BottleneckBlock_Shared_Attention, self).__init__()
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.shared_basis_1 = shared_basis_1
+        # self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
+        #                        stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        # self.conv3 = nn.Conv2d(planes, self.expansion *
+        #                        planes, kernel_size=1, bias=False)
+        self.shared_basis_2 = shared_basis_2
+        self.bn3 = nn.BatchNorm2d(self.expansion*planes)
+
+        # exp: channel attention
+        k_size = 3
+        self.chan_attention = eca_layer(self.expansion*planes, k_size)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != self.expansion*planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion*planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion*planes)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        # out = F.relu(self.bn2(self.conv2(out)))
+        out = F.relu(self.bn2(self.shared_basis_1(out)))
+        # out = self.bn3(self.conv3(out))
+        out = self.bn3(self.shared_basis_2(out))
+
+        # exp: channel attention
+        out = self.chan_attention(out)
+
         out += self.shortcut(x)
         out = F.relu(out)
         return out
@@ -504,13 +578,18 @@ def ResNet34_SingleShared(shared_rank, unique_rank):
 def ResNet50_Shared():
     return ResNet_BottleneckShared(BottleneckBlock_Shared, BottleneckBlock, [3, 4, 6, 3])
 
+# A model with a shared basis in each residual block group.
+def ResNet50_Shared_Attention():
+    return ResNet_BottleneckShared(BottleneckBlock_Shared_Attention, BottleneckBlock, [3, 4, 6, 3])
+
 def test():
     #net = ResNet50()
-    net = ResNet50_Shared()
+    net = ResNet50_Shared_Attention()
     #x = torch.randn(256,3,32,32)
     x = torch.randn(16,3,224,224)
     y = net(x)
     print(y.size())
-    #print(net)
+    print(net)
 
-test()
+if __name__ == '__main__':
+    test()
