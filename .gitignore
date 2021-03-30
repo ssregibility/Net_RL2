@@ -1,6 +1,8 @@
 checkpoint/
 data/
 images/
+figures/
+experi/
 __pycache__/
 *.png
 *.ipynb
