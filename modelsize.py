@@ -16,19 +16,19 @@ import datetime
 import numpy as np
 
 #from models.cifar100 import mobilenetv2
-#from models.ilsvrc import mobilenetv2
-from models.ilsvrc import resnet
+from models.ilsvrc import mobilenetv2
+#from models.ilsvrc import resnet
 
 from ptflops import get_model_complexity_info
 
 #model = mobilenetv2_exp2.MobileNetV2_Shared
 #model = mobilenetv2.MobileNetV2_Shared
 #model = mobilenetv2.MobileNetV2
-model = resnet.ResNet34
+#model = resnet.ResNet34
 #model = resnet.ResNet34_SingleShared
 #model = resnet.ResNet34_DoubleShared
 #model = mobilenetv2.MobileNetV2_Shared
-#model = mobilenetv2.MobileNetV2_SharedDouble
+model = mobilenetv2.MobileNetV2_SharedDouble
 #model = mobilenetv2.MobileNetV2
 
 #model = torchvision.models.mobilenet_v2

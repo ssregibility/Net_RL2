@@ -121,7 +121,7 @@ class BlockSharedDouble(nn.Module):
 class BlockSharedDoubleAttention(nn.Module):
     '''expand + depthwise + pointwise'''
     def __init__(self, in_planes, out_planes, expansion, stride, shared_basis_1, shared_basis_2):
-        super(BlockSharedDouble, self).__init__()
+        super(BlockSharedDoubleAttention, self).__init__()
         self.stride = stride
         self.shared_basis1 = shared_basis_1
         self.shared_basis2 = shared_basis_2
@@ -307,9 +307,9 @@ class MobileNetV2_SharedDouble(nn.Module):
         layers.append(Block(in_channels, out_channels, t, stride))
 
         while repeat - 1:
-            layers.append(BlockSharedDouble(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
+            #layers.append(BlockSharedDouble(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
             # use BlockSharedDoubleAttention to apply ECA-Net's channel attention.
-            # layers.append(BlockSharedDoubleAttention(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
+            layers.append(BlockSharedDoubleAttention(out_channels, out_channels, t, 1, shared_basis1, shared_basis2))
             repeat -= 1
 
         return nn.Sequential(*layers)
