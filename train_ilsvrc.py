@@ -46,8 +46,8 @@ if args.model not in dic_model:
     print("The model is currently not supported")
     sys.exit()
 
-trainloader = utils.get_traindata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size,download=True, num_workers=8)
-testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=8)
+trainloader = utils.get_traindata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size,download=True, num_workers=16)
+testloader = utils.get_testdata('ILSVRC2012',args.dataset_path,batch_size=args.batch_size, num_workers=16)
 
 #args.visible_device sets which cuda devices to be used
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"  
@@ -541,7 +541,7 @@ def adjust_learning_rate_mobilenetv2(optimizer, epoch, args_lr):
     if epoch > 225:
         lr = lr * 0.1
     if epoch > 285:
-        lr = lr * 0.1
+        lr = lr * 0.5
 
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -576,7 +576,8 @@ elif 'MobileNetV2_Shared' == args.model:
 elif 'MobileNetV2_SharedDouble' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate_mobilenetv2
-    total_epoches = 300
+    #total_epoches = 300
+    total_epoches = 400
 elif 'MobileNetV2' == args.model:
     func_train = train
     rate_scheduler = adjust_learning_rate_mobilenetv2

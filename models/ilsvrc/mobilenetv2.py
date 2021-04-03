@@ -134,7 +134,10 @@ class BlockSharedDoubleAttention(nn.Module):
         self.bn3 = nn.BatchNorm2d(out_planes)
 
         # exp: channel attention
-        k_size = 3
+        if (in_planes < 96): 
+          k_size = 1
+        else:
+          k_size = 3
         self.chan_attention = eca_layer(out_planes, k_size)
 
         self.use_res_connect = self.stride == 1 and in_planes == out_planes
