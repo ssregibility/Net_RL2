@@ -37,6 +37,7 @@ dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet34_SingleShared':resnet.ResNet34_SingleShared, \
     'ResNet50':resnet.ResNet50, \
     'ResNet50_Shared':resnet.ResNet50_Shared, \
+    'ResNet50_SharedSingle':resnet.ResNet50_SharedSingle, \
     'ResNet50_Shared_Attention':resnet.ResNet50_Shared_Attention, \
     'MobileNetV2':mobilenetv2.MobileNetV2, \
     'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared, \
@@ -525,9 +526,9 @@ def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
     if epoch > 60: #30: #45:
         lr = lr * 0.1
-    if epoch > 120: #60: #75:
+    if epoch > 100: #60: #75:
         lr = lr * 0.1
-    if epoch > 160: #140: #90: # 110:
+    if epoch > 140: #140: #90: # 110:
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
@@ -561,11 +562,15 @@ elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
     total_epoches = 150 #120
-elif 'ResNet50_Shared' in args.model:
+elif 'ResNet50_Shared' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
     total_epoches = 150 #120
-elif 'ResNet50_Shared_Attention' in args.model:
+elif 'ResNet50_SharedSingle' == args.model:
+    func_train = train_basis_single
+    rate_scheduler = adjust_learning_rate
+    total_epoches = 160 #120
+elif 'ResNet50_Shared_Attention' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
     total_epoches = 150 #120
