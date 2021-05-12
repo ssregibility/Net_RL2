@@ -16,8 +16,8 @@ import datetime
 import numpy as np
 
 #from models.cifar100 import mobilenetv2
-#from models.ilsvrc import mobilenetv2
-from models.ilsvrc import resnet
+from models.ilsvrc import mobilenetv2
+#from models.ilsvrc import resnet
 
 from ptflops import get_model_complexity_info
 
@@ -28,13 +28,16 @@ from ptflops import get_model_complexity_info
 #model = resnet.ResNet34_SingleShared
 #model = resnet.ResNet34_DoubleShared
 #model = mobilenetv2.MobileNetV2_Shared
-#model = mobilenetv2.MobileNetV2_SharedDouble
+model = mobilenetv2.MobileNetV2_SharedDouble
 #model = mobilenetv2.MobileNetV2
 
 #model = torchvision.models.mobilenet_v2
 #model = resnet.ResNet50_Shared
-model = resnet.ResNet50_SharedSingle
+#model = resnet.ResNet50_SharedSingle
+#model = resnet.ResNet101_Shared
+#model = resnet.ResNet101_SharedSingle
 #model = resnet.ResNet50
+#model = resnet.ResNet101
 
 with torch.cuda.device(0):
   net = model()

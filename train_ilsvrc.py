@@ -39,6 +39,8 @@ dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet50_Shared':resnet.ResNet50_Shared, \
     'ResNet50_SharedSingle':resnet.ResNet50_SharedSingle, \
     'ResNet50_Shared_Attention':resnet.ResNet50_Shared_Attention, \
+    'ResNet101_Shared':resnet.ResNet101_Shared, \
+    'ResNet101_SharedSingle':resnet.ResNet101_SharedSingle, \
     'MobileNetV2':mobilenetv2.MobileNetV2, \
     'MobileNetV2_Shared':mobilenetv2.MobileNetV2_Shared, \
     'MobileNetV2_SharedDouble':mobilenetv2.MobileNetV2_SharedDouble }
@@ -562,14 +564,14 @@ elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
     total_epoches = 150 #120
-elif 'ResNet50_Shared' == args.model:
+elif 'ResNet50_Shared' == args.model or 'ResNet101_Shared' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
-    total_epoches = 150 #120
-elif 'ResNet50_SharedSingle' == args.model:
+    total_epoches = 180 #150 #120
+elif 'ResNet50_SharedSingle' == args.model or 'ResNet101_SharedSingle' == args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
-    total_epoches = 160 #120
+    total_epoches = 180 #120
 elif 'ResNet50_Shared_Attention' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate

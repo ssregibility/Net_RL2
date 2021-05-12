@@ -669,6 +669,10 @@ def ResNet34():
 def ResNet50():
     return ResNet(BottleneckBlock, [3, 4, 6, 3])
 
+# Original ResNet
+def ResNet101():
+    return ResNet(BottleneckBlock, [3, 4, 23, 3])
+
 # A model with 2 shared bases in each residual block group.
 def ResNet34_DoubleShared(shared_rank, unique_rank):
     return ResNet_DoubleShared(BasicBlock_DoubleShared, BasicBlock, [3, 4, 6, 3], shared_rank, unique_rank)
@@ -689,9 +693,19 @@ def ResNet50_SharedSingle():
 def ResNet50_Shared_Attention():
     return ResNet_BottleneckShared(BottleneckBlock_Shared_Attention, BottleneckBlock, [3, 4, 6, 3])
 
+# A model with a shared basis in each residual block group.
+def ResNet101_Shared():
+    return ResNet_BottleneckShared(BottleneckBlock_Shared, BottleneckBlock, [3, 4, 23, 3])
+
+# A model with a shared basis in each residual block group.
+def ResNet101_SharedSingle():
+    return ResNet_BottleneckSharedSingle(BottleneckBlock_SharedSingle, BottleneckBlock, [3, 4, 23, 3])
+
+
 def test():
     #net = ResNet50()
-    net = ResNet50_SharedSingle()
+    #net = ResNet50_SharedSingle()
+    net = ResNet101_SharedSingle()
     #net = ResNet50_Shared_Attention()
     #x = torch.randn(256,3,32,32)
     x = torch.randn(16,3,224,224)
