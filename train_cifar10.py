@@ -450,8 +450,8 @@ def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
     if epoch > 150:
         lr = lr * 0.1
-    #if epoch > 225:
-    if epoch > 250:
+    if epoch > 225:
+    #if epoch > 250:
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
@@ -487,7 +487,7 @@ if args.pretrained != None:
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     best_acc = checkpoint['acc']
     
-for i in range(args.starting_epoch, 350):
+for i in range(args.starting_epoch, 300):
     start = timeit.default_timer()
     
     adjust_learning_rate(optimizer, i+1, args.lr)
