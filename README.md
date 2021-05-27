@@ -60,7 +60,7 @@ To train ResNet34-S48U1 in the paper on ILSVRC2012, run:
 ```eval
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet34_DoubleShared --shared_rank=48 --unique_rank=1 --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
 ```
-To train ResNet50/101-Shared in the paper on ILSVRC2012, run:
+To train ResNet50-Shared in the paper on ILSVRC2012, run:
 
 ```eval
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet50_SharedSingle --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
@@ -70,6 +70,12 @@ To train ResNet50-Shared++ in the paper on ILSVRC2012, run:
 
 ```eval
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet50_Shared --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
+```
+
+To train ResNet101-Shared in the paper on ILSVRC2012, run:
+
+```eval
+python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet101_SharedSingle --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
 ```
 
 To evaluate proposed MobileNetV2_Shared model in the paper on ILSVRC2012, run:
