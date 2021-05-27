@@ -97,7 +97,7 @@ Our model achieves the following performance on :
 | ResNet50-Shared++     |     23.95%         |      7.14%       |      18.26M     |  4.11G  | [Download](https://drive.google.com/file/d/16XIdAqjqkePCw-Ppf3z2yPUbKNFhXbGl/view?usp=sharing) |
 | ResNet101-Shared     |     22.31%         |      6.47%       |      29.47M     |  7.83G  | [Download](https://drive.google.com/file/d/1iqLO06CwUQtuyJJ3wTumlZ5v7aTZrssQ/view?usp=sharing) |
 | MobileNetV2-Shared    |     27.61%         |      9.34%       |      3.24M     |  0.33G  | [Download](https://drive.google.com/file/d/1EWYOVj0URjc7j93ciYaRONorlPU2v4DX/view?usp=sharing) |
-| MobileNetV2-Shared++    |     28.21%         |      9.85%       |      2.98M     |  0.33G  | [Download](https://drive.google.com/file/d/15AF7I8RGRuTHAzZuKpo7cakIpaOU49cw/view?usp=sharing) |
+| MobileNetV2-Shared++    |     28.21%         |      9.85%       |      2.98M     |  0.33G  | [Download](https://drive.google.com/file/d/1V1cPxGyCGO0Fx-W2r9Wpfy81ByKypFuI/view?usp=sharing) |
 
 
 ## Contributing
