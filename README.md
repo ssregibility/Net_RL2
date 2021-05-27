@@ -61,7 +61,7 @@ To train ResNet50/101-Shared in the paper on ILSVRC2012, run:
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet50_SharedSingle --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
 ```
 
-To train ResNet50/101-Shared++ in the paper on ILSVRC2012, run:
+To train ResNet50-Shared++ in the paper on ILSVRC2012, run:
 
 ```eval
 python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=ResNet50_Shared --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
