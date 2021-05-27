@@ -34,7 +34,7 @@ def get_traindata(dataset, root, download=False, shuffle=True, batch_size=128, n
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         
         data = datasets.ImageFolder(
-        root+"train/",
+        root+"/train/",
         transforms.Compose([
             transforms.RandomResizedCrop(224),
             transforms.RandomHorizontalFlip(),
@@ -75,7 +75,7 @@ def get_testdata(dataset, root, download=False, shuffle=False, batch_size=128, n
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         
         testloader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(root+"val/", transforms.Compose([
+        datasets.ImageFolder(root+"/val/", transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.ToTensor(),

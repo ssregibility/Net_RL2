@@ -110,9 +110,9 @@ def train(epoch):
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
 
-def train_basis_double_separate(epoch, include_unique_basis=True):
+def train_basis_double(epoch, include_unique_basis=True):
     """
-    Training for models sharing double-bases
+    Training for models sharing two bases across convolution blocks
     """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
@@ -136,61 +136,23 @@ def train_basis_double_separate(epoch, include_unique_basis=True):
         correct_top1 += correct[:, :1].sum()        
         total += targets.size(0)
         
-        # get similarity of basis filters
+        # get similarity of elements of filter bases
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
             layer = getattr(net, "layer"+str(gid))
             shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
-
-            num_shared_basis = shared_basis_1.weight.shape[0]
-            num_all_basis = num_shared_basis 
-
-            all_basis =(shared_basis_1.weight,)
-            if (include_unique_basis == True):  
-                num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
-                num_all_basis += (num_unique_basis * (len(layer) -1))
-                for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight,)
-
-            B = torch.cat(all_basis).view(num_all_basis, -1)
-            #print("B size:", B.shape)
-
-            # compute orthogonalities btwn all baisis  
-            D = torch.mm(B, torch.t(B)) 
-
-            # make diagonal zeros
-            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
-            
-            #print("D size:", D.shape)
-           
-            if (include_unique_basis == True):  
-                # orthogonalities btwn shared<->(shared/unique)
-                sim += torch.sum(D[0:num_shared_basis,:])  
-                cnt_sim += num_shared_basis*num_all_basis
-            else: # orthogonalities only btwn shared basis
-                sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-                cnt_sim += num_shared_basis**2
-        
-        #average similarity
-        avg_sim1 = sim / cnt_sim
-
-        # get similarity of basis filters
-        cnt_sim = 0 
-        sim = 0
-        for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
-            layer = getattr(net, "layer"+str(gid))
             shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
 
-            num_shared_basis = shared_basis_2.weight.shape[0]
+            num_shared_basis = shared_basis_2.weight.shape[0] + shared_basis_1.weight.shape[0]
             num_all_basis = num_shared_basis 
 
-            all_basis =(shared_basis_2.weight,)
+            all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
             if (include_unique_basis == True):  
                 num_unique_basis = layer[1].basis_conv1.weight.shape[0] 
-                num_all_basis += (num_unique_basis * (len(layer) -1))
+                num_all_basis += (num_unique_basis * 2 * (len(layer) -1))
                 for i in range(1, len(layer)):
-                    all_basis += (layer[i].basis_conv1.weight,)
+                    all_basis += (layer[i].basis_conv1.weight, layer[i].basis_conv2.weight,)
 
             B = torch.cat(all_basis).view(num_all_basis, -1)
             #print("B size:", B.shape)
@@ -207,22 +169,33 @@ def train_basis_double_separate(epoch, include_unique_basis=True):
                 # orthogonalities btwn shared<->(shared/unique)
                 sim += torch.sum(D[0:num_shared_basis,:])  
                 cnt_sim += num_shared_basis*num_all_basis
+                
+                # orthogonalities btwn unique<->unique in the same layer
+                for i in range(1, len(layer)):
+                    for j in range(2):  # conv1 & conv2
+                         idx_base = num_shared_basis   \
+                          + (i-1) * (num_unique_basis) * 2 \
+                          + num_unique_basis * j 
+                         sim += torch.sum(\
+                                 D[idx_base:idx_base + num_unique_basis, \
+                                 idx_base:idx_base+num_unique_basis])
+                         cnt_sim += num_unique_basis ** 2 
             else: # orthogonalities only btwn shared basis
                 sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
                 cnt_sim += num_shared_basis**2
         
         #average similarity
-        avg_sim2 = sim / cnt_sim
+        avg_sim = sim / cnt_sim
 
         #acc loss
         loss = criterion(outputs, targets)
 
         if (batch_idx == 0):
             print("accuracy_loss: %.6f" % loss)
-            print("similarity loss: %.6f" % (avg_sim1+avg_sim2))
+            print("similarity loss: %.6f" % avg_sim)
 
         #apply similarity loss, multiplied by args.lambdaR
-        loss = loss + (avg_sim1 + avg_sim2) * args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
         loss.backward()
         optimizer.step()
         
@@ -231,12 +204,11 @@ def train_basis_double_separate(epoch, include_unique_basis=True):
     
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
-
-
+    
 
 def train_basis_single(epoch, include_unique_basis=True):
     """
-    Training for models sharing single-bases.
+    Training for models sharing a single filter basis across convolution blocks
     """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
@@ -260,7 +232,7 @@ def train_basis_single(epoch, include_unique_basis=True):
         correct_top1 += correct[:, :1].sum()        
         total += targets.size(0)
         
-        # get similarity of basis filters
+        # get similarity of elements of filter bases
         cnt_sim = 0 
         sim = 0
         for gid in range(1, 4):  # ResNet for CIFAR10 has 3 groups
@@ -451,18 +423,6 @@ def adjust_learning_rate(optimizer, epoch, args_lr):
     if epoch > 150:
         lr = lr * 0.1
     if epoch > 225:
-    #if epoch > 250:
-        lr = lr * 0.1
-
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-
-def adjust_learning_rate_long(optimizer, epoch, args_lr):
-    # cifar10 requires particularlly long training epoches.
-    lr = args_lr
-    if epoch > 250:
-        lr = lr * 0.1
-    if epoch > 375: 
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
@@ -473,7 +433,8 @@ best_acc_top5 = 0
 
 func_train = train
 if 'DoubleShared' in args.model:
-    func_train = train_basis_double_separate
+    func_train = train_basis_double
+    #func_train = train_basis_double_separate
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
 elif 'SharedOnly' in args.model:

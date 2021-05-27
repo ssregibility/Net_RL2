@@ -124,8 +124,6 @@ def train_basis(epoch):
     correct_top5 = 0
     total = 0
     
-    #plt.figure()
-
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
     
@@ -510,7 +508,7 @@ if args.pretrained != None:
     net.load_state_dict(checkpoint['net_state_dict'])
     best_acc = checkpoint['acc']
                                 
-for i in range(args.starting_epoch, 150):
+for i in range(args.starting_epoch, 300):
     start = timeit.default_timer()
     func_train(i+1)
     test(i+1)
@@ -520,33 +518,5 @@ for i in range(args.starting_epoch, 150):
 
     #============
     
-checkpoint = torch.load('./checkpoint/' + 'CIFAR100-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
-net.load_state_dict(checkpoint['net_state_dict'])
-best_acc = checkpoint['acc']
-
-optimizer = optim.SGD(net.parameters(), lr=args.lr*0.1, momentum=args.momentum, weight_decay=args.weight_decay)
-for i in range(0, 75):
-    start = timeit.default_timer()
-    func_train(i+151)
-    test(i+151)
-    
-    stop = timeit.default_timer()
-    print('Time: ', stop - start)  
-    
-    #============
-    
-checkpoint = torch.load('./checkpoint/' + 'CIFAR100-' + args.model + "-S" + str(args.shared_rank) + "-U" + str(args.unique_rank) + "-L" + str(args.lambdaR) + "-" + args.visible_device + '.pth')
-net.load_state_dict(checkpoint['net_state_dict'])
-best_acc = checkpoint['acc']
-
-optimizer = optim.SGD(net.parameters(), lr=args.lr*0.01, momentum=args.momentum, weight_decay=args.weight_decay)
-for i in range(0, 75):
-    start = timeit.default_timer()
-    func_train(i+226)
-    test(i+226)
-    
-    stop = timeit.default_timer()
-    print('Time: ', stop - start)  
-
 print("Best_Acc_top1 = %.3f" % best_acc)
 print("Best_Acc_top5 = %.3f" % best_acc_top5)

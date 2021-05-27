@@ -26,7 +26,7 @@ parser.add_argument('--visible_device', default="0", help='CUDA_VISIBLE_DEVICES'
 parser.add_argument('--pretrained', default=None, help='Path of a pretrained model file')
 parser.add_argument('--starting_epoch', default=0, type=int, help='An epoch which model training starts')
 parser.add_argument('--dataset_path', default="/media/data/ILSVRC2012/", help='A path to dataset directory')
-parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, ResNet50, ResNet50_Shared, MobileNetV2, MobileNetV2_Shared, MobileNetV2_SharedDouble')
+parser.add_argument('--model', default="ResNet34_DoubleShared", help='ResNet34, ResNet34_DoubleShared, ResNet34_SingleShared, ResNet50, ResNet50_Shared, ResNet50_SharedSingle, ResNet101, ResNet101_Shared, ResNet101_SharedSingle,MobileNetV2, MobileNetV2_Shared, MobileNetV2_SharedDouble')
 args = parser.parse_args()
 
 from models.ilsvrc import resnet, mobilenetv2
@@ -38,7 +38,6 @@ dic_model = {'ResNet18': resnet.ResNet18, \
     'ResNet50':resnet.ResNet50, \
     'ResNet50_Shared':resnet.ResNet50_Shared, \
     'ResNet50_SharedSingle':resnet.ResNet50_SharedSingle, \
-    'ResNet50_Shared_Attention':resnet.ResNet50_Shared_Attention, \
     'ResNet101_Shared':resnet.ResNet101_Shared, \
     'ResNet101_SharedSingle':resnet.ResNet101_SharedSingle, \
     'MobileNetV2':mobilenetv2.MobileNetV2, \
@@ -123,9 +122,84 @@ def train(epoch):
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
 
-def train_basis_double_separate(epoch):
+def train_basis_double(epoch):
     """
     Training for models sharing double-bases 
+    """
+    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
+    net.train()
+    
+    correct_top1 = 0
+    correct_top5 = 0
+    total = 0
+    
+    for batch_idx, (inputs, targets) in enumerate(trainloader):
+        inputs, targets = inputs.to(device), targets.to(device)
+    
+        optimizer.zero_grad()
+        outputs = net(inputs)
+
+        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
+
+        label_e = targets.view(targets.size(0), -1).expand_as(pred)
+        correct = pred.eq(label_e).float()
+
+        correct_top5 += correct[:, :5].sum()
+        correct_top1 += correct[:, :1].sum()        
+        total += targets.size(0)
+        
+        # get similarity of basis filters
+        cnt_sim = 0 
+        sim = 0
+        for gid in range(1, 5):  # ResNet has 4 groups
+            shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
+            shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
+
+            num_shared_basis = shared_basis_2.weight.shape[0] + shared_basis_1.weight.shape[0]
+            num_all_basis = num_shared_basis 
+
+            all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
+
+            B = torch.cat(all_basis).view(num_all_basis, -1)
+            #print("B size:", B.shape)
+
+            # compute orthogonalities btwn all baisis  
+            D = torch.mm(B, torch.t(B)) 
+
+            # make diagonal zeros
+            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
+            
+            #print("D size:", D.shape)
+         
+            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
+            cnt_sim += num_shared_basis**2
+
+        #average similarity
+        avg_sim = sim / cnt_sim
+
+        #acc loss
+        loss = criterion(outputs, targets)
+
+        if (batch_idx == 0):
+            print("accuracy_loss: %.6f" % loss)
+            print("similarity loss: %.6f" % avg_sim)
+
+        #apply similarity loss, multiplied by args.lambdaR
+        loss = loss + avg_sim * args.lambdaR
+        loss.backward()
+        optimizer.step()
+        
+    acc_top1 = 100.*correct_top1/total
+    acc_top5 = 100.*correct_top5/total
+    
+    print("Training_Acc_Top1 = %.3f" % acc_top1)
+    print("Training_Acc_Top5 = %.3f" % acc_top5)
+
+
+def train_basis_double_separate(epoch):
+    """
+    Training for models sharing two bases in convolution blocks.
+    Two bases are orthogonalized in separation. 
     """
     print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
     net.train()
@@ -223,80 +297,6 @@ def train_basis_double_separate(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-def train_basis_double(epoch):
-    """
-    Training for models sharing double-bases 
-    """
-    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
-    net.train()
-    
-    correct_top1 = 0
-    correct_top5 = 0
-    total = 0
-    
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.to(device), targets.to(device)
-    
-        optimizer.zero_grad()
-        outputs = net(inputs)
-
-        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
-
-        label_e = targets.view(targets.size(0), -1).expand_as(pred)
-        correct = pred.eq(label_e).float()
-
-        correct_top5 += correct[:, :5].sum()
-        correct_top1 += correct[:, :1].sum()        
-        total += targets.size(0)
-        
-        # get similarity of basis filters
-        cnt_sim = 0 
-        sim = 0
-        for gid in range(1, 5):  # ResNet has 4 groups
-            shared_basis_1 = getattr(net,"shared_basis_"+str(gid)+"_1")
-            shared_basis_2 = getattr(net,"shared_basis_"+str(gid)+"_2")
-
-            num_shared_basis = shared_basis_2.weight.shape[0] + shared_basis_1.weight.shape[0]
-            num_all_basis = num_shared_basis 
-
-            all_basis =(shared_basis_1.weight, shared_basis_2.weight, )
-
-            B = torch.cat(all_basis).view(num_all_basis, -1)
-            #print("B size:", B.shape)
-
-            # compute orthogonalities btwn all baisis  
-            D = torch.mm(B, torch.t(B)) 
-
-            # make diagonal zeros
-            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
-            
-            #print("D size:", D.shape)
-         
-            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-            cnt_sim += num_shared_basis**2
-
-        #average similarity
-        avg_sim = sim / cnt_sim
-
-        #acc loss
-        loss = criterion(outputs, targets)
-
-        if (batch_idx == 0):
-            print("accuracy_loss: %.6f" % loss)
-            print("similarity loss: %.6f" % avg_sim)
-
-        #apply similarity loss, multiplied by args.lambdaR
-        loss = loss + avg_sim * args.lambdaR
-        loss.backward()
-        optimizer.step()
-        
-    acc_top1 = 100.*correct_top1/total
-    acc_top5 = 100.*correct_top5/total
-    
-    print("Training_Acc_Top1 = %.3f" % acc_top1)
-    print("Training_Acc_Top5 = %.3f" % acc_top5)
-
-
 
 def train_basis_single(epoch):
     """
@@ -371,102 +371,6 @@ def train_basis_single(epoch):
     print("Training_Acc_Top1 = %.3f" % acc_top1)
     print("Training_Acc_Top5 = %.3f" % acc_top5)
 
-def train_basis_double_mv2(epoch):
-    """
-    Training for models sharing single-bases.
-    """
-    print('\nCuda ' + args.visible_device + ' Basis Epoch: %d' % epoch)
-    net.train()
-    
-    correct_top1 = 0
-    correct_top5 = 0
-    total = 0
-    
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.to(device), targets.to(device)
-    
-        optimizer.zero_grad()
-        outputs = net(inputs)
-
-        _, pred = outputs.topk(5, 1, largest=True, sorted=True)
-
-        label_e = targets.view(targets.size(0), -1).expand_as(pred)
-        correct = pred.eq(label_e).float()
-
-        correct_top5 += correct[:, :5].sum()
-        correct_top1 += correct[:, :1].sum()        
-        total += targets.size(0)
-        
-        # get similarity of basis filters
-        cnt_sim = 0 
-        sim = 0
-        for gid in range(1, 5):  # all models have 4 groups
-            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_1")
-
-            num_shared_basis = shared_basis.weight.shape[0]
-            num_all_basis = num_shared_basis 
-
-            all_basis =(shared_basis.weight,)
-
-            B = torch.cat(all_basis).view(num_all_basis, -1)
-            #print("B size:", B.shape)
-
-            # compute orthogonalities btwn all baisis  
-            D = torch.mm(B, torch.t(B)) 
-
-            # make diagonal zeros
-            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
-            
-            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-            cnt_sim += num_shared_basis**2
-
-        #average similarity
-        avg_sim_1 = sim / cnt_sim
-
-        cnt_sim = 0 
-        sim = 0
-        for gid in range(1, 5):  # all models have 4 groups
-            shared_basis = getattr(net,"shared_basis_"+str(gid)+"_2")
-
-            num_shared_basis = shared_basis.weight.shape[0]
-            num_all_basis = num_shared_basis 
-
-            all_basis =(shared_basis.weight,)
-
-            B = torch.cat(all_basis).view(num_all_basis, -1)
-            #print("B size:", B.shape)
-
-            # compute orthogonalities btwn all baisis  
-            D = torch.mm(B, torch.t(B)) 
-
-            # make diagonal zeros
-            D = (D - torch.eye(num_all_basis, num_all_basis, device=device))**2
-            
-            sim += torch.sum(D[0:num_shared_basis,0:num_shared_basis])
-            cnt_sim += num_shared_basis**2
-
-        #average similarity
-        avg_sim_2 = sim / cnt_sim
-
-        #acc loss
-        loss = criterion(outputs, targets)
-
-        if (batch_idx == 0):
-            print("accuracy_loss: %.6f" % loss)
-            print("similarity loss: %.6f" % avg_sim_1)
-            print("similarity loss: %.6f" % avg_sim_2)
-        #apply similarity loss, multiplied by args.lambdaR
-        loss = loss + (avg_sim_1+avg_sim_2) * args.lambdaR
-        loss.backward()
-        optimizer.step()
-        
-    acc_top1 = 100.*correct_top1/total
-    acc_top5 = 100.*correct_top5/total
-    
-    print("Training_Acc_Top1 = %.3f" % acc_top1)
-    print("Training_Acc_Top5 = %.3f" % acc_top5)
-
-
 
 #Test for models
 def test(epoch):
@@ -526,11 +430,11 @@ def test(epoch):
         
 def adjust_learning_rate(optimizer, epoch, args_lr):
     lr = args_lr
-    if epoch > 60: #30: #45:
+    if epoch > 60: 
         lr = lr * 0.1
-    if epoch > 100: #60: #75:
+    if epoch > 100: 
         lr = lr * 0.1
-    if epoch > 140: #140: #90: # 110:
+    if epoch > 140: 
         lr = lr * 0.1
 
     for param_group in optimizer.param_groups:
@@ -552,30 +456,32 @@ def adjust_learning_rate_mobilenetv2(optimizer, epoch, args_lr):
 best_acc = 0
 best_acc_top5 = 0
 
+# default training settings
 func_train = train
 total_epoches = 150
 rate_scheduler = adjust_learning_rate
 
+# model-specific training settings
 if 'DoubleShared' in args.model:
     func_train = train_basis_double
     rate_scheduler = adjust_learning_rate
-    total_epoches = 150 #100 #120
+    total_epoches = 150 
 elif 'SingleShared' in args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
-    total_epoches = 150 #120
+    total_epoches = 150 
 elif 'ResNet50_Shared' == args.model or 'ResNet101_Shared' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
-    total_epoches = 180 #150 #120
+    total_epoches = 150 
 elif 'ResNet50_SharedSingle' == args.model or 'ResNet101_SharedSingle' == args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate
-    total_epoches = 180 #120
+    total_epoches = 150
 elif 'ResNet50_Shared_Attention' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate
-    total_epoches = 150 #120
+    total_epoches = 150 
 elif 'MobileNetV2_Shared' == args.model:
     func_train = train_basis_single
     rate_scheduler = adjust_learning_rate_mobilenetv2
@@ -583,8 +489,7 @@ elif 'MobileNetV2_Shared' == args.model:
 elif 'MobileNetV2_SharedDouble' == args.model:
     func_train = train_basis_double_separate
     rate_scheduler = adjust_learning_rate_mobilenetv2
-    #total_epoches = 300
-    total_epoches = 400
+    total_epoches = 300
 elif 'MobileNetV2' == args.model:
     func_train = train
     rate_scheduler = adjust_learning_rate_mobilenetv2
