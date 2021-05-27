@@ -1,6 +1,6 @@
 # Deeply Shared Filter Bases for Parameter-Efficient Convolutional Neural Networks
 
-This repository is the official implementation of "Deeply Shared Filter Bases for Parameter-Efficient Convolutional Neural Networks" under submission.
+This repository is the official implementation of "Deeply Shared Filter Bases for Parameter-Efficient Convolutional Neural Networks" that is under submission to NeurIPS 2021.
 
 In this paper, we present a recursive convolution block design and training method, in which a recursively shareable part, or a filter basis, 
 is separated and learned while effectively avoiding the vanishing/exploding gradients problem during training.
