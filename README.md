@@ -87,7 +87,7 @@ python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=MobileNetV2_Shared -
 To evaluate proposed MobileNetV2_Shared++ model in the paper on ILSVRC2012, run:
 
 ```eval
-python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=MobileNetV2_Shared --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
+python3 eval_ilsvrc.py --pretrained=<path_to_model> --model=MobileNetV2_SharedDouble --dataset_path=<path_to_dataset> --visible_device=0,1,2,3
 ```
 
 ## Results and Pretrained models
